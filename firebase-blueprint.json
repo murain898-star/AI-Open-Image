@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user" },
+        "email": { "type": "string", "description": "User's email address" },
+        "displayName": { "type": "string", "description": "User's display name" },
+        "photoURL": { "type": "string", "description": "URL to user's profile photo" },
+        "customGeminiApiKey": { "type": "string", "description": "User provided Gemini API key" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the user was created" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Preset": {
+      "title": "Preset",
+      "description": "Saved generation presets",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the preset" },
+        "name": { "type": "string", "description": "Name of the preset" },
+        "userId": { "type": "string", "description": "ID of the user who owns this preset" },
+        "state": { "type": "object", "description": "The configuration state of the preset" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the preset was created" }
+      },
+      "required": ["id", "name", "userId", "state"]
+    },
+    "GeneratedMedia": {
+      "title": "GeneratedMedia",
+      "description": "History of generated images and videos",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the media" },
+        "url": { "type": "string", "description": "URL of the generated image or video" },
+        "type": { "type": "string", "enum": ["image", "video"], "description": "Type of media (image or video)" },
+        "prompt": { "type": "string", "description": "The prompt used to generate the media" },
+        "userId": { "type": "string", "description": "ID of the user who generated this media" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the media was generated" }
+      },
+      "required": ["id", "url", "type", "userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/presets/{presetId}": {
+      "schema": "Preset",
+      "description": "User-specific presets"
+    },
+    "/users/{userId}/history/{mediaId}": {
+      "schema": "GeneratedMedia",
+      "description": "User-specific generation history"
+    }
+  }
+}

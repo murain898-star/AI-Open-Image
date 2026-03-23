@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - Unique identifier for the user
+    //   - email: string (required) - User's email address
+    //   - displayName: string (optional) - User's display name
+    //   - photoURL: string (optional) - URL to user's profile photo
+    //   - customGeminiApiKey: string (optional) - User provided Gemini API key
+    //   - createdAt: string (optional) - Timestamp when the user was created
+    //   - role: string (optional) - User role (admin/user)
+    //
+    // Collection: users/{userId}/presets
+    // Document ID: {presetId}
+    // Fields:
+    //   - id: string (required) - Unique identifier for the preset
+    //   - name: string (required) - Name of the preset
+    //   - userId: string (required) - ID of the user who owns this preset
+    //   - state: map (required) - The configuration state of the preset
+    //   - createdAt: string (optional) - Timestamp when the preset was created
+    //
+    // Collection: users/{userId}/history
+    // Document ID: {mediaId}
+    // Fields:
+    //   - id: string (required) - Unique identifier for the media
+    //   - url: string (required) - URL of the generated image or video
+    //   - type: string (required) - Type of media (image or video)
+    //   - prompt: string (optional) - The prompt used to generate the media
+    //   - userId: string (required) - ID of the user who generated this media
+    //   - createdAt: string (optional) - Timestamp when the media was generated
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "mura.in898@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'customGeminiApiKey', 'createdAt', 'role']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             data.email is string && isValidEmail(data.email) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 1000)) &&
+             (!('customGeminiApiKey' in data) || (data.customGeminiApiKey is string && data.customGeminiApiKey.size() < 256)) &&
+             (!('role' in data) || (data.role in ['admin', 'user']));
+    }
+
+    function isValidPreset(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'userId', 'state', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.state is map;
+    }
+
+    function isValidMedia(data) {
+      return hasOnlyAllowedFields(['id', 'url', 'type', 'prompt', 'userId', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 &&
+             data.url is string && data.url.size() > 0 && data.url.size() < 2000 &&
+             data.type in ['image', 'video'] &&
+             (!('prompt' in data) || (data.prompt is string && data.prompt.size() < 5000)) &&
+             data.userId is string && data.userId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == (resource.data.keys().contains('role') ? resource.data.role : 'user') || isAdmin());
+
+      match /presets/{presetId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidPreset(request.resource.data);
+        allow update: if isOwner(userId) && isValidPreset(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /history/{mediaId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidMedia(request.resource.data);
+        allow update: if isOwner(userId) && isValidMedia(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
