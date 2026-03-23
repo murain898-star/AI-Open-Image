@@ -105,46 +105,53 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
 
   // 1. Add Images FIRST (AI models process visual context better when it comes first)
   if (state.animateReferenceImage) {
-    const { mimeType, data } = extractBase64Data(state.animateReferenceImage);
+    const resized = await resizeImageBase64(state.animateReferenceImage);
+    const { mimeType, data } = extractBase64Data(resized);
     parts.push({ inlineData: { mimeType, data } });
     parts.push({ text: "Reference Image: Starting frame for animation." });
     baseImageForVideo = { mimeType, data };
-    baseImageUrl = state.animateReferenceImage;
+    baseImageUrl = resized;
   } else {
     if (state.mode === 'saree') {
       if (state.sareeImage) {
-        const { mimeType, data } = extractBase64Data(state.sareeImage);
+        const resized = await resizeImageBase64(state.sareeImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 1: The exact saree design to use." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.blouseImage) {
-        const { mimeType, data } = extractBase64Data(state.blouseImage);
+        const resized = await resizeImageBase64(state.blouseImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 2: The exact blouse design to use." });
         if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
       }
     } else if (state.garmentType === 'Dress') {
       if (state.dressTopImage) {
-        const { mimeType, data } = extractBase64Data(state.dressTopImage);
+        const resized = await resizeImageBase64(state.dressTopImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 1: The exact top/kurti design to use." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.dressBottomImage) {
-        const { mimeType, data } = extractBase64Data(state.dressBottomImage);
+        const resized = await resizeImageBase64(state.dressBottomImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 2: The exact bottom/pants design to use." });
         if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
       }
       if (state.dressDupattaImage) {
-        const { mimeType, data } = extractBase64Data(state.dressDupattaImage);
+        const resized = await resizeImageBase64(state.dressDupattaImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 3: The exact dupatta/scarf design to use." });
       }
     } else {
       if (state.outfitImage) {
-        const { mimeType, data } = extractBase64Data(state.outfitImage);
+        const resized = await resizeImageBase64(state.outfitImage);
+        const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: `Reference Image: The exact ${state.garmentType !== 'Auto' ? state.garmentType : 'outfit'} design to use.` });
         baseImageForVideo = { mimeType, data };
@@ -152,13 +159,15 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     }
 
     if (state.enableJewellery && state.jewelleryImage) {
-      const { mimeType, data } = extractBase64Data(state.jewelleryImage);
+      const resized = await resizeImageBase64(state.jewelleryImage);
+      const { mimeType, data } = extractBase64Data(resized);
       parts.push({ inlineData: { mimeType, data } });
       parts.push({ text: "Reference Image: The exact jewellery to use." });
     }
 
     if (state.background === 'Uploaded' && state.backgroundImage) {
-      const { mimeType, data } = extractBase64Data(state.backgroundImage);
+      const resized = await resizeImageBase64(state.backgroundImage);
+      const { mimeType, data } = extractBase64Data(resized);
       parts.push({ inlineData: { mimeType, data } });
       parts.push({ text: "Reference Image: The background to use." });
     }
