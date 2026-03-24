@@ -69,7 +69,7 @@ export default function App() {
     outputFormat: 'image',
     videoDuration: 5,
     videoResolution: '1080p',
-    quality: 'HD',
+    quality: 'Standard',
     aspectRatio: '3:4',
     customWidth: 10,
     customHeight: 10,
@@ -169,8 +169,9 @@ export default function App() {
     }
 
     const hasCustomKey = apiKey && apiKey.trim() !== '';
+    const requiresPaidKey = state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast';
 
-    if (!hasCustomKey) {
+    if (!hasCustomKey && !requiresPaidKey) {
       setError(`Please add your Google AI Studio API Key in the Profile section to generate.`);
       return;
     }

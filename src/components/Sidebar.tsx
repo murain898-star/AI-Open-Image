@@ -128,6 +128,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 <strong>Free Tier Note:</strong> Google's free limit is per <strong>Project</strong>, not per API key. If you get a "Quota Exceeded" error, a new key in the same project won't work. You must wait 24 hours or create a new Google Cloud Project.
               </p>
             )}
+            {(state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast') && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded-md border border-red-100 dark:border-red-800/50">
+                <strong>Requires Paid API Key:</strong> Gemini HQ and Veo Video models <strong>DO NOT</strong> have a free tier. If you use a free API key, you will immediately get a "Quota Exceeded (429)" error. You must enable billing in Google Cloud to use these models.
+              </p>
+            )}
           </div>
 
         {/* Advanced Fidelity Controls */}
@@ -494,11 +499,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <Layout className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               Output Settings
             </label>
-            {!state.useProModel && (
-              <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full uppercase tracking-wider">Standard</span>
+            {state.imageModel === 'gemini-fast' && (
+              <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full uppercase tracking-wider">Fast</span>
             )}
-            {state.useProModel && (
-              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full uppercase tracking-wider">Pro</span>
+            {state.imageModel === 'gemini-hq' && (
+              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full uppercase tracking-wider">HQ</span>
             )}
           </div>
           
@@ -511,13 +516,13 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   onChange={e => updateState('quality', e.target.value as ImageQuality)}
                   className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                 >
-                  {state.apiProvider === 'google' && !state.useProModel && (
+                  {state.apiProvider === 'google' && state.imageModel === 'gemini-fast' && (
                     <>
                       <option value="Low Res (Free)">Low Res (512x512)</option>
                       <option value="Standard">Standard (1024x1024)</option>
                     </>
                   )}
-                  {state.apiProvider === 'google' && state.useProModel && (
+                  {state.apiProvider === 'google' && state.imageModel === 'gemini-hq' && (
                     <>
                       <option value="Standard">Standard (1K)</option>
                       <option value="2K">High (2K)</option>
@@ -593,7 +598,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                     <option value="4:3">4:3 (Landscape)</option>
                     <option value="9:16">9:16 (Story)</option>
                     <option value="16:9">16:9 (Widescreen)</option>
-                    {state.useProModel && (
+                    {state.imageModel === 'gemini-hq' && (
                       <>
                         <option value="1:4">1:4 (Tall)</option>
                         <option value="1:8">1:8 (Extra Tall)</option>
@@ -616,7 +621,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               </select>
             </div>
 
-            {state.aspectRatio === 'Custom' && state.useProModel && state.outputFormat === 'image' && (
+            {state.aspectRatio === 'Custom' && state.imageModel === 'gemini-hq' && state.outputFormat === 'image' && (
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Width (inch)</label>

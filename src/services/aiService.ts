@@ -60,16 +60,19 @@ async function ensureApiKey(model: string): Promise<void> {
 }
 
 function getApiKey(model: string): string {
-  // Always prefer the custom API key from localStorage if it exists
+  const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
+  
+  // If the model requires a paid key, ALWAYS use the platform's key selector
+  if (requiresPaidKey && process.env.API_KEY) {
+    return process.env.API_KEY;
+  }
+
+  // Otherwise, prefer the custom API key from localStorage if it exists
   const customKey = localStorage.getItem('custom_gemini_api_key');
   if (customKey && customKey.trim() !== '') {
     return customKey.trim();
   }
 
-  const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
-  if (requiresPaidKey && process.env.API_KEY) {
-    return process.env.API_KEY;
-  }
   if (process.env.GEMINI_API_KEY) {
     return process.env.GEMINI_API_KEY;
   }
@@ -341,7 +344,7 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
       }
       
       if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-        throw new Error("Quota Exceeded (429): Your free tier API key has reached its limit. Please try again later or upgrade to a paid key.");
+        throw new Error(`Quota Exceeded (429): If you are using Gemini HQ or Veo Video, they DO NOT have a free tier (you must enable billing). Switch to 'Gemini (Fast)' for free usage. If you are already on Gemini (Fast), you have hit the free limit. Try again later.\n\nOriginal Error: ${errorMessage}`);
       }
       
       if (errorMessage.includes('safety') || errorMessage.includes('blocked') || errorMessage.includes('content policy')) {
