@@ -123,6 +123,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 </>
               )}
             </div>
+            {state.imageModel === 'gemini-fast' && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-md border border-amber-100 dark:border-amber-800/50">
+                <strong>Free Tier Note:</strong> Google's free limit is per <strong>Project</strong>, not per API key. If you get a "Quota Exceeded" error, a new key in the same project won't work. You must wait 24 hours or create a new Google Cloud Project.
+              </p>
+            )}
           </div>
 
         {/* Advanced Fidelity Controls */}
@@ -498,7 +503,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           </div>
           
           <div className="space-y-3">
-            {state.outputFormat === 'image' && state.useProModel && (
+            {state.outputFormat === 'image' && (
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Image Resolution</label>
                 <select
@@ -506,7 +511,13 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   onChange={e => updateState('quality', e.target.value as ImageQuality)}
                   className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                 >
-                  {state.apiProvider === 'google' && (
+                  {state.apiProvider === 'google' && !state.useProModel && (
+                    <>
+                      <option value="Low Res (Free)">Low Res (512x512)</option>
+                      <option value="Standard">Standard (1024x1024)</option>
+                    </>
+                  )}
+                  {state.apiProvider === 'google' && state.useProModel && (
                     <>
                       <option value="Standard">Standard (1K)</option>
                       <option value="2K">High (2K)</option>

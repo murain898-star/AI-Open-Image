@@ -103,9 +103,11 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   let baseImageForVideo: { mimeType: string, data: string } | null = null;
   let baseImageUrl: string | null = null;
 
+  const maxDim = state.quality === 'Low Res (Free)' ? 512 : 768;
+
   // 1. Add Images FIRST (AI models process visual context better when it comes first)
   if (state.animateReferenceImage) {
-    const resized = await resizeImageBase64(state.animateReferenceImage);
+    const resized = await resizeImageBase64(state.animateReferenceImage, maxDim, maxDim);
     const { mimeType, data } = extractBase64Data(resized);
     parts.push({ inlineData: { mimeType, data } });
     parts.push({ text: "Reference Image: Starting frame for animation." });
@@ -114,14 +116,14 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   } else {
     if (state.mode === 'saree') {
       if (state.sareeImage) {
-        const resized = await resizeImageBase64(state.sareeImage);
+        const resized = await resizeImageBase64(state.sareeImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 1: The exact saree design to use." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.blouseImage) {
-        const resized = await resizeImageBase64(state.blouseImage);
+        const resized = await resizeImageBase64(state.blouseImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 2: The exact blouse design to use." });
@@ -129,28 +131,28 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
       }
     } else if (state.garmentType === 'Dress') {
       if (state.dressTopImage) {
-        const resized = await resizeImageBase64(state.dressTopImage);
+        const resized = await resizeImageBase64(state.dressTopImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 1: The exact top/kurti design to use." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.dressBottomImage) {
-        const resized = await resizeImageBase64(state.dressBottomImage);
+        const resized = await resizeImageBase64(state.dressBottomImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 2: The exact bottom/pants design to use." });
         if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
       }
       if (state.dressDupattaImage) {
-        const resized = await resizeImageBase64(state.dressDupattaImage);
+        const resized = await resizeImageBase64(state.dressDupattaImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: "Reference Image 3: The exact dupatta/scarf design to use." });
       }
     } else {
       if (state.outfitImage) {
-        const resized = await resizeImageBase64(state.outfitImage);
+        const resized = await resizeImageBase64(state.outfitImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
         parts.push({ text: `Reference Image: The exact ${state.garmentType !== 'Auto' ? state.garmentType : 'outfit'} design to use.` });
@@ -159,14 +161,14 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     }
 
     if (state.enableJewellery && state.jewelleryImage) {
-      const resized = await resizeImageBase64(state.jewelleryImage);
+      const resized = await resizeImageBase64(state.jewelleryImage, maxDim, maxDim);
       const { mimeType, data } = extractBase64Data(resized);
       parts.push({ inlineData: { mimeType, data } });
       parts.push({ text: "Reference Image: The exact jewellery to use." });
     }
 
     if (state.background === 'Uploaded' && state.backgroundImage) {
-      const resized = await resizeImageBase64(state.backgroundImage);
+      const resized = await resizeImageBase64(state.backgroundImage, maxDim, maxDim);
       const { mimeType, data } = extractBase64Data(resized);
       parts.push({ inlineData: { mimeType, data } });
       parts.push({ text: "Reference Image: The background to use." });
@@ -307,7 +309,7 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
       };
       
       if (modelName === 'gemini-3.1-flash-image-preview') {
-        imageConfig.imageSize = state.quality === 'Gigapixel' || state.quality === '4K' ? '4K' : state.quality === '2K' ? '2K' : '1K';
+        imageConfig.imageSize = state.quality === 'Gigapixel' || state.quality === '4K' ? '4K' : state.quality === '2K' ? '2K' : state.quality === 'Low Res (Free)' ? '512px' : '1K';
       }
 
       const response = await ai.models.generateContent({
