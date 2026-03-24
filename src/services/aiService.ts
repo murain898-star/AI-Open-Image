@@ -2,7 +2,7 @@ import { AppState } from "../types";
 import { GoogleGenAI } from "@google/genai";
 
 // Helper to resize image before sending to API to prevent "Payload Too Large" errors
-async function resizeImageBase64(base64Str: string, maxWidth = 1024, maxHeight = 1024): Promise<string> {
+async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 768): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -187,7 +187,7 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     poseDescription = fancyPoses[Math.floor(Math.random() * fancyPoses.length)];
   }
 
-  let prompt = `Generate a photorealistic, 8k resolution, full-body fashion editorial photo of a ${state.gender.toLowerCase()} model ${poseDescription}. 
+  let prompt = `Generate a high-quality, professional full-body fashion catalog photo of a ${state.gender.toLowerCase()} model ${poseDescription}. 
 
 CRITICAL INSTRUCTION: The model MUST be wearing the EXACT garment(s) shown in the provided reference image(s). 
 You must perfectly copy the embroidery, motifs, pattern, color, and fabric texture from the reference images onto the model's outfit. 
@@ -208,6 +208,14 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
   if (state.customPrompt) prompt += `\nAdditional details: ${state.customPrompt}.`;
   if (state.background !== 'Uploaded') {
     prompt += `\nBackground: ${state.background === 'Custom' ? state.customBackground : state.background}.`;
+  }
+  
+  // Add fidelity and denoising instructions to the prompt so the AI respects the user's choices
+  if (state.fidelityMode) {
+    prompt += `\nFidelity Mode: ${state.fidelityMode}. Ensure strict adherence to the reference design.`;
+  }
+  if (state.denoisingStrength !== undefined) {
+    prompt += `\nDenoising/Creativity Strength: ${state.denoisingStrength} (Lower means closer to original, higher means more creative variations).`;
   }
 
   let finalPrompt = prompt;
@@ -294,16 +302,21 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
     return { url: URL.createObjectURL(blob), type: 'video' };
   } else {
     try {
+      const imageConfig: any = {
+        aspectRatio: state.aspectRatio === '1:1' || state.aspectRatio === '3:4' || state.aspectRatio === '4:3' || state.aspectRatio === '9:16' || state.aspectRatio === '16:9' ? state.aspectRatio : "1:1"
+      };
+      
+      if (modelName === 'gemini-3.1-flash-image-preview') {
+        imageConfig.imageSize = state.quality === 'Gigapixel' || state.quality === '4K' ? '4K' : state.quality === '2K' ? '2K' : '1K';
+      }
+
       const response = await ai.models.generateContent({
         model: modelName,
         contents: {
           parts: parts
         },
         config: {
-          imageConfig: {
-            aspectRatio: state.aspectRatio === '1:1' || state.aspectRatio === '3:4' || state.aspectRatio === '4:3' || state.aspectRatio === '9:16' || state.aspectRatio === '16:9' ? state.aspectRatio : "1:1",
-            imageSize: modelName === 'gemini-3.1-flash-image-preview' ? (state.quality === 'Gigapixel' || state.quality === '4K' ? '4K' : state.quality === '2K' ? '2K' : '1K') : undefined
-          }
+          imageConfig: imageConfig
         }
       });
 
@@ -315,15 +328,26 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
       
       throw new Error("No image data returned from Gemini.");
     } catch (error: any) {
-      console.error(error);
+      console.error("Gemini API Error:", error);
       const errorMessage = error.message || String(error);
+      
       if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('Requested entity was not found')) {
-        if (window.aistudio) {
+        if (window.aistudio && window.aistudio.openSelectKey) {
           await window.aistudio.openSelectKey();
         }
-        throw new Error("Permission Denied (403): Your selected API key does not have access to this model. Please select a key from a paid Google Cloud project, then try again.");
+        throw new Error("Permission Denied (403): Your API key doesn't have access to this specific model. If using a Free key, ensure you selected 'Gemini (Fast)'.");
       }
-      throw error;
+      
+      if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+        throw new Error("Quota Exceeded (429): Your free tier API key has reached its limit. Please try again later or upgrade to a paid key.");
+      }
+      
+      if (errorMessage.includes('safety') || errorMessage.includes('blocked') || errorMessage.includes('content policy')) {
+        throw new Error("Safety Filter Blocked: Google's AI safety filters blocked this request. Try using a different reference image or simpler prompt.");
+      }
+      
+      // Throw the actual error so the user can see exactly what went wrong
+      throw new Error(`API Error: ${errorMessage}`);
     }
   }
 }
