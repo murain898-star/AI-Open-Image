@@ -42,12 +42,6 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
               >
                 <HelpCircle className="w-5 h-5" /> FAQ
               </button>
-              <button
-                onClick={() => setActiveTab('api-guide')}
-                className={`w-full flex items-center gap-3 px-4 py-4 text-left text-sm font-medium transition-colors ${activeTab === 'api-guide' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-l-4 border-indigo-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-transparent'}`}
-              >
-                <FileText className="w-5 h-5" /> API & Pricing Guide
-              </button>
             </div>
           </div>
           
@@ -138,27 +132,6 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">How long does generation take?</h3>
                     <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation uses advanced AI and can take anywhere from 5 to 15 seconds. Video generation can take a few minutes depending on server load.</p>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'api-guide' && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">API & Pricing Guide</h2>
-                <div className="prose prose-indigo dark:prose-invert text-gray-600 dark:text-gray-300 space-y-6">
-                  <p>When using your own API keys, you are billed directly by Google AI Studio. Below is a guide to the supported resolutions and estimated costs.</p>
-                  
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Google AI Studio (Gemini & Veo)</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Best for high-quality images and cinematic videos. Free tier available for developers.</p>
-                    <ul className="space-y-2 text-sm">
-                      <li><strong>Image (Gemini 3.1 Flash):</strong> Supports 1K, 2K, 4K, and <strong>Gigapixel Mode (Max)</strong> resolutions.</li>
-                      <li><strong>Video (Veo 3.1):</strong> Supports 720p and 1080p resolutions.</li>
-                      <li><strong>Pricing:</strong> Images are free on the free tier, or ~$0.03 per image (up to 4K) and <strong>~$0.06 for Gigapixel Mode</strong> on pay-as-you-go. Videos cost ~$0.10 - $0.20 per generation.</li>
-                    </ul>
-                  </div>
-                  
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 italic">Note: Prices are estimates and subject to change by Google. Please check their official pricing pages for the most accurate information.</p>
                 </div>
               </div>
             )}

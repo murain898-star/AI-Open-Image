@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset } from '../types';
 import { Uploader } from './Uploader';
-import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors } from 'lucide-react';
+import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { FidelityMode } from '../types';
 
@@ -25,9 +25,9 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
   const handleEnhancePrompt = async () => {
     if (!state.customPrompt.trim()) return;
     
-    const apiKey = localStorage.getItem('custom_gemini_api_key');
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      alert("Please add your Google AI Studio API Key in the Profile section to use this feature.");
+      alert("API key is missing. Please check your environment variables.");
       return;
     }
 
@@ -60,7 +60,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
 
   return (
     <div className="w-80 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto flex flex-col transition-colors">
-      <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+      <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
             <img 
@@ -77,6 +77,15 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             AI Open Image
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Generate high-res model photos</p>
+        </div>
+        <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Balance</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">0 Credits</span>
+            <button className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors">
+              BUY
+            </button>
+          </div>
         </div>
       </div>
 
@@ -123,16 +132,6 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 </>
               )}
             </div>
-            {state.imageModel === 'gemini-fast' && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-md border border-amber-100 dark:border-amber-800/50">
-                <strong>Free Tier Note:</strong> Google's free limit is per <strong>Project</strong>, not per API key. If you get a "Quota Exceeded" error, a new key in the same project won't work. You must wait 24 hours or create a new Google Cloud Project.
-              </p>
-            )}
-            {(state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast') && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 p-2 rounded-md border border-red-100 dark:border-red-800/50">
-                <strong>Requires Paid API Key:</strong> Gemini HQ and Veo Video models <strong>DO NOT</strong> have a free tier. If you use a free API key, you will immediately get a "Quota Exceeded (429)" error. You must enable billing in Google Cloud to use these models.
-              </p>
-            )}
           </div>
 
         {/* Advanced Fidelity Controls */}
@@ -734,6 +733,62 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
 
 
 
+        {/* Color Customization */}
+        <div className="space-y-4">
+          <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+            <Palette className="w-4 h-4 text-pink-500" />
+            Color Customization (Recolor)
+          </label>
+          <div className="space-y-3 p-3 bg-pink-50/50 dark:bg-pink-900/10 rounded-xl border border-pink-100/50 dark:border-pink-800/30">
+            {state.colorModifications && state.colorModifications.map((mod, index) => (
+              <div key={mod.id} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Element (e.g., Base, Embroidery)"
+                  value={mod.element}
+                  onChange={(e) => {
+                    const newMods = [...state.colorModifications];
+                    newMods[index].element = e.target.value;
+                    updateState('colorModifications', newMods);
+                  }}
+                  className="flex-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-pink-500 outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Color (e.g., Red)"
+                  value={mod.color}
+                  onChange={(e) => {
+                    const newMods = [...state.colorModifications];
+                    newMods[index].color = e.target.value;
+                    updateState('colorModifications', newMods);
+                  }}
+                  className="w-1/3 text-xs border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-pink-500 outline-none"
+                />
+                <button
+                  onClick={() => {
+                    const newMods = state.colorModifications.filter(m => m.id !== mod.id);
+                    updateState('colorModifications', newMods);
+                  }}
+                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                updateState('colorModifications', [
+                  ...(state.colorModifications || []),
+                  { id: Math.random().toString(36).substr(2, 9), element: '', color: '' }
+                ]);
+              }}
+              className="w-full py-2 border border-dashed border-pink-300 dark:border-pink-700/50 rounded-lg text-xs font-medium text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors flex items-center justify-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Add Color Change
+            </button>
+          </div>
+        </div>
+
         {/* Custom Prompt */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -761,6 +816,21 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
       </div>
 
       <div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 space-y-3 transition-colors">
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Generation Cost:</span>
+          <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+            {(() => {
+              const cost = state.outputFormat === 'video' 
+                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                : (state.quality === 'Low Res (Free)' ? 0 : 
+                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
+                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
+                   state.quality === '4K' ? 3 : 
+                   state.quality === 'Ultra' ? 4 : 5);
+              return `${cost} Credits`;
+            })()}
+          </span>
+        </div>
         <button
           onClick={onGenerate}
           disabled={
@@ -770,7 +840,10 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               : (state.garmentType === 'Dress' 
                   ? (!state.dressTopImage && !state.dressBottomImage && !state.dressDupattaImage) 
                   : !state.outfitImage)) ||
-            (state.background === 'Uploaded' && !state.backgroundImage)
+            (state.background === 'Uploaded' && !state.backgroundImage) ||
+            (state.outputFormat === 'video' 
+              ? true // All videos cost credits
+              : state.quality !== 'Low Res (Free)') // Only Low Res is free
           }
           className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
         >
@@ -778,6 +851,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             <>
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Generating...
+            </>
+          ) : (state.outputFormat === 'video' || state.quality !== 'Low Res (Free)') ? (
+            <>
+              <Wand2 className="w-4 h-4" />
+              Insufficient Credits
             </>
           ) : (
             <>

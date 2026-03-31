@@ -22,6 +22,12 @@ declare global {
   }
 }
 
+export interface ColorModification {
+  id: string;
+  element: string;
+  color: string;
+}
+
 export interface AppState {
   apiProvider: ApiProvider;
   mode: AppMode;
@@ -54,6 +60,7 @@ export interface AppState {
   enableJewellery: boolean;
   jewelleryImage: string | null;
   jewelleryDescription: string;
+  colorModifications: ColorModification[];
   // Advanced Controls
   fidelityMode: FidelityMode;
   structureReference: boolean;

@@ -8,6 +8,7 @@ import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
 import { LoginView } from './components/LoginView';
 import { VideoUnderstandingView } from './components/VideoUnderstandingView';
+import { PricingView } from './components/PricingView';
 import { generateFashionMedia } from './services/aiService';
 import { Wand2, Loader2 } from 'lucide-react';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -78,6 +79,7 @@ export default function App() {
     enableJewellery: false,
     jewelleryImage: null,
     jewelleryDescription: '',
+    colorModifications: [],
     fidelityMode: 'Ultra (Strict Design Matching)',
     structureReference: true,
     denoisingStrength: 0.1,
@@ -163,19 +165,6 @@ export default function App() {
   };
 
   const handleGenerate = async () => {
-    let apiKey = '';
-    if (state.apiProvider === 'google') {
-      apiKey = localStorage.getItem('custom_gemini_api_key') || '';
-    }
-
-    const hasCustomKey = apiKey && apiKey.trim() !== '';
-    const requiresPaidKey = state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast';
-
-    if (!hasCustomKey && !requiresPaidKey) {
-      setError(`Please add your Google AI Studio API Key in the Profile section to generate.`);
-      return;
-    }
-
     setIsGenerating(true);
     setError(null);
     setProgressMsg(null);
@@ -236,6 +225,8 @@ export default function App() {
       {currentView === 'settings' && <SettingsView theme={theme} setTheme={setTheme} />}
       
       {currentView === 'profile' && <ProfileView state={state} setState={setState} />}
+
+      {currentView === 'pricing' && <PricingView />}
 
       {currentView === 'video' && <VideoUnderstandingView />}
       

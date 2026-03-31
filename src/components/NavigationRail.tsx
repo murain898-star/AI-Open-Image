@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Settings, User, Wand2, Video } from 'lucide-react';
+import { Home, Settings, User, Wand2, Video, Image as ImageIcon, CreditCard } from 'lucide-react';
 import { auth } from '../lib/firebase';
 
 interface NavigationRailProps {
@@ -13,14 +13,15 @@ export function NavigationRail({ currentView, setCurrentView }: NavigationRailPr
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'create', icon: Wand2, label: 'Create' },
     { id: 'video', icon: Video, label: 'Video' },
+    { id: 'pricing', icon: CreditCard, label: 'Pricing' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
     <div className="w-20 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-6 justify-between z-20 shrink-0 transition-colors">
       <div className="space-y-8 w-full flex flex-col items-center">
-        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none mb-4">
-          <span className="text-white font-bold text-xl">P</span>
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none mb-4">
+          <ImageIcon className="w-5 h-5 text-white" />
         </div>
         
         <div className="flex flex-col gap-4 w-full px-3">

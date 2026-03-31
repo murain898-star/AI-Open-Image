@@ -67,12 +67,6 @@ function getApiKey(model: string): string {
     return process.env.API_KEY;
   }
 
-  // Otherwise, prefer the custom API key from localStorage if it exists
-  const customKey = localStorage.getItem('custom_gemini_api_key');
-  if (customKey && customKey.trim() !== '') {
-    return customKey.trim();
-  }
-
   if (process.env.GEMINI_API_KEY) {
     return process.env.GEMINI_API_KEY;
   }
@@ -211,6 +205,18 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
 
   if (state.styleExtra !== 'None') prompt += `\nStyle: ${state.styleExtra}.`;
   if (state.customPrompt) prompt += `\nAdditional details: ${state.customPrompt}.`;
+  
+  if (state.colorModifications && state.colorModifications.length > 0) {
+    const validMods = state.colorModifications.filter(m => m.element.trim() !== '' && m.color.trim() !== '');
+    if (validMods.length > 0) {
+      prompt += `\n\nCRITICAL COLOR INSTRUCTIONS:\n`;
+      validMods.forEach(mod => {
+        prompt += `- Change the color of the ${mod.element} to ${mod.color}.\n`;
+      });
+      prompt += `Ensure these color changes are applied accurately while preserving the original design patterns, embroidery, and textures.`;
+    }
+  }
+
   if (state.background !== 'Uploaded') {
     prompt += `\nBackground: ${state.background === 'Custom' ? state.customBackground : state.background}.`;
   }
@@ -340,7 +346,7 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
         if (window.aistudio && window.aistudio.openSelectKey) {
           await window.aistudio.openSelectKey();
         }
-        throw new Error("Permission Denied (403): Your API key doesn't have access to this specific model. If using a Free key, ensure you selected 'Gemini (Fast)'.");
+        throw new Error("Permission Denied (403): Your API key is invalid or doesn't have access. If you created this key in Google Cloud Console, you MUST enable the 'Generative Language API' for your project. Alternatively, create a key at aistudio.google.com/app/apikey.");
       }
       
       if (errorMessage.includes('429') || errorMessage.includes('quota')) {
@@ -360,7 +366,7 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
 export async function analyzeVideo(videoBase64: string, question: string): Promise<string> {
   const apiKey = getApiKey('gemini-3.1-pro-preview');
   if (!apiKey) {
-    throw new Error("API key must be set. Please add your Google AI Studio API Key in the Profile section.");
+    throw new Error("API key is missing. Please check your environment variables.");
   }
   const ai = new GoogleGenAI({ apiKey });
   const { mimeType, data } = extractBase64Data(videoBase64);
