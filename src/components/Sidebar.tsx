@@ -15,9 +15,10 @@ interface SidebarProps {
   onSavePreset: (name: string) => void;
   onLoadPreset: (preset: Preset) => void;
   onDeletePreset: (id: string) => void;
+  userCredits: number;
 }
 
-export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeToPro, presets, onSavePreset, onLoadPreset, onDeletePreset }: SidebarProps) {
+export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeToPro, presets, onSavePreset, onLoadPreset, onDeletePreset, userCredits }: SidebarProps) {
   const [isSavingPreset, setIsSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
@@ -81,8 +82,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
         <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
           <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Balance</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">0 Credits</span>
-            <button className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors">
+            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{userCredits} Credits</span>
+            <button 
+              onClick={onUpgradeToPro}
+              className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors"
+            >
               BUY
             </button>
           </div>
@@ -841,9 +845,16 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   ? (!state.dressTopImage && !state.dressBottomImage && !state.dressDupattaImage) 
                   : !state.outfitImage)) ||
             (state.background === 'Uploaded' && !state.backgroundImage) ||
-            (state.outputFormat === 'video' 
-              ? true // All videos cost credits
-              : state.quality !== 'Low Res (Free)') // Only Low Res is free
+            (() => {
+              const cost = state.outputFormat === 'video' 
+                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                : (state.quality === 'Low Res (Free)' ? 0 : 
+                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
+                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
+                   state.quality === '4K' ? 3 : 
+                   state.quality === 'Ultra' ? 4 : 5);
+              return userCredits < cost;
+            })()
           }
           className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
         >
@@ -852,7 +863,16 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               Generating...
             </>
-          ) : (state.outputFormat === 'video' || state.quality !== 'Low Res (Free)') ? (
+          ) : (() => {
+              const cost = state.outputFormat === 'video' 
+                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                : (state.quality === 'Low Res (Free)' ? 0 : 
+                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
+                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
+                   state.quality === '4K' ? 3 : 
+                   state.quality === 'Ultra' ? 4 : 5);
+              return userCredits < cost;
+            })() ? (
             <>
               <Wand2 className="w-4 h-4" />
               Insufficient Credits

@@ -1,8 +1,32 @@
 import React, { useState } from 'react';
-import { CreditCard, Check, Zap, Star, Crown, Info, ChevronRight, Briefcase, Building2 } from 'lucide-react';
+import { CreditCard, Check, Zap, Star, Crown, Info, ChevronRight, Briefcase, Building2, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
 
-export function PricingView() {
+interface PricingViewProps {
+  onPurchaseSuccess?: (credits: number) => void;
+}
+
+export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [checkoutItem, setCheckoutItem] = useState<{name: string, price: number, credits: number} | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success'>('idle');
+
+  const handlePurchase = (name: string, price: number, credits: number) => {
+    setCheckoutItem({ name, price, credits });
+    setPaymentStatus('idle');
+  };
+
+  const processPayment = () => {
+    setPaymentStatus('processing');
+    setTimeout(() => {
+      setPaymentStatus('success');
+      if (onPurchaseSuccess && checkoutItem) {
+        onPurchaseSuccess(checkoutItem.credits);
+      }
+      setTimeout(() => {
+        setCheckoutItem(null);
+      }, 3000);
+    }, 2000);
+  };
 
   const plans = [
     {
@@ -206,11 +230,14 @@ export function PricingView() {
                   ))}
                 </ul>
 
-                <button className={`w-full py-3 rounded-xl font-bold transition-colors ${
-                  plan.popular
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
-                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
-                }`}>
+                <button 
+                  onClick={() => handlePurchase(plan.name, plan.price, plan.credits)}
+                  className={`w-full py-3 rounded-xl font-bold transition-colors ${
+                    plan.popular
+                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white'
+                  }`}
+                >
                   Choose {plan.name}
                 </button>
               </div>
@@ -227,7 +254,7 @@ export function PricingView() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {topUps.map((topUp, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer group flex flex-col items-center text-center">
+              <div key={i} onClick={() => handlePurchase(`${topUp.credits} Credits Top-up`, topUp.price, topUp.credits)} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer group flex flex-col items-center text-center">
                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
@@ -242,6 +269,72 @@ export function PricingView() {
         </div>
 
       </div>
+
+      {/* PhonePe Payment Modal Simulation */}
+      {checkoutItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-2xl mx-auto mb-6">
+              <Smartphone className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">Simulated Payment</h3>
+            <p className="text-center text-gray-500 dark:text-gray-400 mb-6 font-medium">To real PhonePe integration</p>
+            
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600 dark:text-gray-300">Item</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{checkoutItem.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-300">Amount</span>
+                <span className="font-bold text-indigo-600 dark:text-indigo-400 text-xl">₹{checkoutItem.price}</span>
+              </div>
+            </div>
+
+            {paymentStatus === 'idle' && (
+              <div className="space-y-4">
+                <button
+                  onClick={processPayment}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2"
+                >
+                  Pay via PhonePe <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setCheckoutItem(null)}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold py-3 px-4 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {paymentStatus === 'processing' && (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Loader2 className="w-10 h-10 text-purple-600 animate-spin mb-4" />
+                <p className="text-gray-900 dark:text-white font-medium">Processing payment via PhonePe...</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please do not close this window.</p>
+              </div>
+            )}
+
+            {paymentStatus === 'success' && (
+              <div className="flex flex-col items-center justify-center py-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-8 h-8" />
+                </div>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center text-sm">Credits added to your account.<br/>(Simulated in Preview)</p>
+              </div>
+            )}
+            
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+              <ShieldCheck className="w-4 h-4" />
+              100% Secure Payment Sandbox
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -26,6 +26,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
+  const [userCredits, setUserCredits] = useState<number>(50); // Default given 50 free credits
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('fashion_ai_theme') as ThemeMode;
@@ -105,8 +106,13 @@ export default function App() {
     setError(null);
     setProgressMsg(null);
     try {
+      const cost = newState.videoResolution === '4K Ultra Master' ? 10 : newState.videoResolution === '1080p' ? 5 : 3;
+      
       const result = await generateFashionMedia(newState, setProgressMsg);
       setGeneratedImage(result);
+      if (cost > 0) {
+        setUserCredits(prev => prev - cost);
+      }
     } catch (err: any) {
       console.error("Animate error:", err);
       setError(err.message || 'Failed to animate image.');
@@ -174,8 +180,19 @@ export default function App() {
     setState(currentState);
 
     try {
+      const cost = currentState.outputFormat === 'video' 
+        ? (currentState.videoResolution === '4K Ultra Master' ? 10 : currentState.videoResolution === '1080p' ? 5 : 3)
+        : (currentState.quality === 'Low Res (Free)' ? 0 : 
+           currentState.quality === 'Standard' || currentState.quality === 'HD' ? 1 :
+           currentState.quality === 'FHD' || currentState.quality === '2K' ? 2 :
+           currentState.quality === '4K' ? 3 : 
+           currentState.quality === 'Ultra' ? 4 : 5);
+           
       const result = await generateFashionMedia(currentState, setProgressMsg);
       setGeneratedImage(result);
+      if (cost > 0) {
+        setUserCredits(prev => prev - cost);
+      }
     } catch (err: any) {
       console.error("Generation error:", err);
       let errorMessage = 'An error occurred during generation.';
@@ -226,7 +243,7 @@ export default function App() {
       
       {currentView === 'profile' && <ProfileView state={state} setState={setState} />}
 
-      {currentView === 'pricing' && <PricingView />}
+      {currentView === 'pricing' && <PricingView onPurchaseSuccess={(credits) => setUserCredits(prev => prev + credits)} />}
 
       {currentView === 'video' && <VideoUnderstandingView />}
       
@@ -237,11 +254,12 @@ export default function App() {
             setState={setState}
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
-            onUpgradeToPro={() => {}}
+            onUpgradeToPro={() => setCurrentView('pricing')}
             presets={presets}
             onSavePreset={handleSavePreset}
             onLoadPreset={handleLoadPreset}
             onDeletePreset={handleDeletePreset}
+            userCredits={userCredits}
           />
           <div className="flex-1 flex flex-col relative">
             {error && (
