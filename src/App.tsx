@@ -123,13 +123,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!auth) {
-      setAuthReady(true);
-      return;
-    }
+    // For now, always use a mock user and bypass Firebase auth
+    setUser({
+      uid: 'test-mock-user',
+      email: 'testuser@example.com',
+      displayName: 'Test User'
+    } as any);
+    setAuthReady(true);
+    
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setAuthReady(true);
+      if (currentUser) {
+        setUser(currentUser);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -229,13 +235,10 @@ export default function App() {
     );
   }
 
-  if (!user && auth) {
-    return <LoginView onTestLogin={() => setUser({
-      uid: 'test-mock-user',
-      email: 'testuser@example.com',
-      displayName: 'Test User'
-    } as any)} />;
-  }
+  // Disable LoginView for now as requested
+  // if (!user) {
+  //   return <LoginView />;
+  // }
 
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans transition-colors">
