@@ -7,25 +7,103 @@ interface PricingViewProps {
 
 export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [checkoutItem, setCheckoutItem] = useState<{name: string, price: number, credits: number} | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success'>('idle');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('1');
 
-  const handlePurchase = (name: string, price: number, credits: number) => {
-    setCheckoutItem({ name, price, credits });
-    setPaymentStatus('idle');
-  };
-
-  const processPayment = () => {
-    setPaymentStatus('processing');
-    setTimeout(() => {
-      setPaymentStatus('success');
-      if (onPurchaseSuccess && checkoutItem) {
-        onPurchaseSuccess(checkoutItem.credits);
+  const initiatePayment = async (name: string, price: number, credits: number) => {
+    try {
+      if (!window.Razorpay) {
+        setPaymentError("Razorpay SDK is blocked. Please disable any ad-blockers, or try opening this app in a new tab by clicking the 'Open in New Tab' icon.");
+        return;
       }
-      setTimeout(() => {
-        setCheckoutItem(null);
-      }, 3000);
-    }, 2000);
+      setIsProcessing(true);
+      setPaymentError(null);
+      setPaymentSuccessMessage(null);
+      
+      // Create order via our backend
+      const res = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: price * 100, // Amount in paise
+          currency: 'INR',
+          receipt: `rcpt_${Date.now()}`
+        })
+      });
+      
+      const orderData = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(orderData.error || 'Failed to create order');
+      }
+
+      const options = {
+        key: orderData.key_id, // Key ID securely retrieved from backend
+        amount: orderData.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+        currency: orderData.currency,
+        name: "AI Open Image",
+        description: `Purchase ${name}`,
+        order_id: orderData.order_id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+        handler: async function (response: any) {
+          try {
+            // Verify payment on backend
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            
+            const verifyData = await verifyRes.json();
+            
+            if (verifyRes.ok && verifyData.status === 'success') {
+              // Success!
+              if (onPurchaseSuccess) {
+                onPurchaseSuccess(credits);
+              }
+              setPaymentSuccessMessage(`Payment successful! Credits added: ${credits}`);
+            } else {
+              setPaymentError(verifyData.error || 'Payment verification failed');
+            }
+          } catch (err: any) {
+            console.log('Verification failed', err.message);
+            setPaymentError('Failed to verify payment');
+          } finally {
+             setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: "User Name",
+          email: "user@example.com",
+          contact: "9999999999"
+        },
+        notes: {
+          address: "AI Open Image Studio"
+        },
+        theme: {
+          color: "#4f46e5"
+        }
+      };
+      
+      console.log(`[DEBUG] Initializing Razorpay Checkout with Test Key: ${options.key}`);
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response: any){
+         console.log('Payment failed', response.error);
+         setPaymentError(`Payment failed: ${response.error.description}`);
+         setIsProcessing(false);
+      });
+      rzp1.open();
+
+    } catch (error: any) {
+      console.log(error);
+      setPaymentError(error.message || 'Payment initiation failed');
+      setIsProcessing(false);
+    }
   };
 
   const plans = [
@@ -117,6 +195,36 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
     <div className="flex-1 h-full overflow-y-auto bg-gray-50 dark:bg-gray-900 p-8 transition-colors">
       <div className="max-w-6xl mx-auto space-y-12">
         
+        {paymentError && (
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-6 py-4 rounded-xl flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <ShieldCheck className="w-6 h-6 shrink-0" />
+              <div>
+                <h4 className="font-bold">Payment Setup Issue</h4>
+                <p className="text-sm">{paymentError}. <br/><strong>Note:</strong> Your Razorpay API keys configured in .env might be invalid or not working. Please update them.</p>
+              </div>
+            </div>
+            <button onClick={() => setPaymentError(null)} className="text-red-500 hover:text-red-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
+        {paymentSuccessMessage && (
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-6 py-4 rounded-xl flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Check className="w-6 h-6 shrink-0" />
+              <div>
+                <h4 className="font-bold">Success</h4>
+                <p className="text-sm">{paymentSuccessMessage}</p>
+              </div>
+            </div>
+            <button onClick={() => setPaymentSuccessMessage(null)} className="text-green-600 hover:text-green-800">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight mb-4">
@@ -231,7 +339,8 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
                 </ul>
 
                 <button 
-                  onClick={() => handlePurchase(plan.name, plan.price, plan.credits)}
+                  onClick={() => initiatePayment(plan.name, plan.price, plan.credits)}
+                  disabled={isProcessing}
                   className={`w-full py-3 rounded-xl font-bold transition-colors ${
                     plan.popular
                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'
@@ -254,7 +363,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {topUps.map((topUp, i) => (
-              <div key={i} onClick={() => handlePurchase(`${topUp.credits} Credits Top-up`, topUp.price, topUp.credits)} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer group flex flex-col items-center text-center">
+              <div key={i} onClick={() => !isProcessing && initiatePayment(`${topUp.credits} Credits Top-up`, topUp.price, topUp.credits)} className={`bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 transition-colors group flex flex-col items-center text-center ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-indigo-500 dark:hover:border-indigo-400 cursor-pointer'}`}>
                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
@@ -268,72 +377,43 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
           </div>
         </div>
 
-      </div>
-
-      {/* PhonePe Payment Modal Simulation */}
-      {checkoutItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-center w-16 h-16 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-2xl mx-auto mb-6">
-              <Smartphone className="w-8 h-8" />
+        {/* Custom Payment Amount */}
+        <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 max-w-xl mx-auto shadow-sm">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Custom Amount</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Enter a custom amount in Rupees (minimum ₹1) to test the integration or pay a specific amount.</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold text-lg"
+                placeholder="Amount in Rupees"
+              />
             </div>
-            
-            <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">Simulated Payment</h3>
-            <p className="text-center text-gray-500 dark:text-gray-400 mb-6 font-medium">To real PhonePe integration</p>
-            
-            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 mb-6 border border-gray-100 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600 dark:text-gray-300">Item</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{checkoutItem.name}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-300">Amount</span>
-                <span className="font-bold text-indigo-600 dark:text-indigo-400 text-xl">₹{checkoutItem.price}</span>
-              </div>
-            </div>
-
-            {paymentStatus === 'idle' && (
-              <div className="space-y-4">
-                <button
-                  onClick={processPayment}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2"
-                >
-                  Pay via PhonePe <ChevronRight className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setCheckoutItem(null)}
-                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold py-3 px-4 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {paymentStatus === 'processing' && (
-              <div className="flex flex-col items-center justify-center py-6">
-                <Loader2 className="w-10 h-10 text-purple-600 animate-spin mb-4" />
-                <p className="text-gray-900 dark:text-white font-medium">Processing payment via PhonePe...</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please do not close this window.</p>
-              </div>
-            )}
-
-            {paymentStatus === 'success' && (
-              <div className="flex flex-col items-center justify-center py-6">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8" />
-                </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</p>
-                <p className="text-gray-500 dark:text-gray-400 text-center text-sm">Credits added to your account.<br/>(Simulated in Preview)</p>
-              </div>
-            )}
-            
-            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-              <ShieldCheck className="w-4 h-4" />
-              100% Secure Payment Sandbox
-            </div>
+            <button
+              onClick={() => {
+                const amt = parseInt(customAmount);
+                if (amt >= 1) {
+                  initiatePayment(`Custom Payment (₹${amt})`, amt, Math.max(1, Math.floor(amt / 10)));
+                } else {
+                  setPaymentError('Minimum amount is ₹1');
+                }
+              }}
+              disabled={isProcessing}
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 flex items-center justify-center min-w-[140px] shadow-sm hover:shadow-md"
+            >
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Pay Now'}
+            </button>
           </div>
         </div>
-      )}
+
+      </div>
 
     </div>
   );
