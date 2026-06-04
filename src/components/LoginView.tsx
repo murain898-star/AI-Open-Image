@@ -9,7 +9,7 @@ import {
 import { auth, googleProvider } from '../lib/firebase';
 import { LogIn, Sparkles, AlertCircle, Mail, Lock } from 'lucide-react';
 
-export function LoginView() {
+export function LoginView({ onTestLogin }: { onTestLogin?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -41,8 +41,9 @@ export function LoginView() {
   const handleAuthError = (err: any) => {
     if (err.code === 'auth/unauthorized-domain') {
       setError(`Domain (${window.location.hostname}) is not authorized. Add it in Firebase Console > Authentication > Settings > Authorized domains.`);
-    } else if (err.code === 'auth/popup-closed-by-user') {
-      setError("Sign-in popup was closed. Please try again or use the redirect option.");
+    } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+      // Ignore this error gracefully
+      setError(null);
     } else if (err.code === 'auth/popup-blocked') {
       setError("Sign-in popup was blocked by your browser. Please allow popups or use the redirect option.");
     } else if (err.code === 'auth/email-already-in-use') {
@@ -96,7 +97,9 @@ export function LoginView() {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
-      console.error("Error signing in with Google Popup:", err);
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        console.error("Error signing in with Google Popup:", err);
+      }
       handleAuthError(err);
     }
   };
@@ -190,6 +193,10 @@ export function LoginView() {
                   <button
                     type="button"
                     onClick={async () => {
+                      if (onTestLogin) {
+                        onTestLogin();
+                        return;
+                      }
                       if (!auth) return;
                       setError(null);
                       setIsSubmitting(true);

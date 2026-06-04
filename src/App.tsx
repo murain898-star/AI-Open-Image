@@ -230,7 +230,11 @@ export default function App() {
   }
 
   if (!user && auth) {
-    return <LoginView />;
+    return <LoginView onTestLogin={() => setUser({
+      uid: 'test-mock-user',
+      email: 'testuser@example.com',
+      displayName: 'Test User'
+    } as any)} />;
   }
 
   return (

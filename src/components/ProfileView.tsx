@@ -37,6 +37,7 @@ export function ProfileView({ state, setState }: ProfileViewProps) {
       } catch (error) {
         console.error("Error signing out:", error);
       }
+      window.location.reload();
     }
   };
 
