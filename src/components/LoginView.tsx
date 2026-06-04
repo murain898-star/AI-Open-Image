@@ -179,13 +179,46 @@ export function LoginView() {
                     />
                   </div>
                 </div>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-xl font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70"
-                >
-                  {isSubmitting ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
-                </button>
+                <div className="flex gap-3">
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-xl font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70"
+                  >
+                    {isSubmitting ? 'Wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!auth) return;
+                      setError(null);
+                      setIsSubmitting(true);
+                      const testEmail = "testuser@example.com";
+                      const testPass = "testpassword123";
+                      setEmail(testEmail);
+                      setPassword(testPass);
+                      try {
+                        await signInWithEmailAndPassword(auth, testEmail, testPass);
+                      } catch (err: any) {
+                        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                          try {
+                            await createUserWithEmailAndPassword(auth, testEmail, testPass);
+                          } catch (signupErr: any) {
+                            handleAuthError(signupErr);
+                          }
+                        } else {
+                          handleAuthError(err);
+                        }
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-xl font-medium transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-70 whitespace-nowrap"
+                  >
+                    Test Login
+                  </button>
+                </div>
               </form>
 
               <div className="flex items-center gap-2 mb-6">
