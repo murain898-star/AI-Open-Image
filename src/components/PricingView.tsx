@@ -39,16 +39,6 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
         throw new Error(orderData.error || 'Failed to create order');
       }
 
-      if (orderData.isMock) {
-        // Simulate payment success directly if using mock mode
-        setTimeout(() => {
-          setIsProcessing(false);
-          if (onPurchaseSuccess) onPurchaseSuccess(credits);
-          setPaymentSuccessMessage(`Mock Payment successful! Credits added: ${credits}`);
-        }, 1500);
-        return;
-      }
-
       const options = {
         key: orderData.key_id, // Key ID securely retrieved from backend
         amount: orderData.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
@@ -100,7 +90,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
         }
       };
       
-      console.log(`[DEBUG] Initializing Razorpay Checkout with Test Key: ${options.key}`);
+      console.log(`[DEBUG] Initializing Razorpay Checkout with Key: ${options.key}`);
       const rzp1 = new window.Razorpay(options);
       rzp1.on('payment.failed', function (response: any){
          console.log('Payment failed', response.error);
