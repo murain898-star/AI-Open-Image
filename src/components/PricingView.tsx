@@ -78,9 +78,8 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
           }
         },
         prefill: {
-          name: "User Name",
-          email: "user@example.com",
-          contact: "9999999999"
+          // Leaving these blank or providing real data is better for Live Mode
+          // as Razorpay risk engine might block fake emails like user@example.com
         },
         notes: {
           address: "AI Open Image Studio"

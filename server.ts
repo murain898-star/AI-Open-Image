@@ -66,7 +66,7 @@ async function startServer() {
       // Intentionally not using console.error here to prevent AI Studio error loop 
       // if the user provides invalid test keys.
       let statusCode = 500;
-      let errorMessage = err.error?.description || err.message || "Failed to create Razorpay order";
+      let errorMessage = "Failed to create Razorpay order: " + (err.error?.description || err.message || "Unknown error");
       if (err.statusCode === 401) {
         statusCode = 401;
         errorMessage = "Razorpay API Keys failed authentication. Is your RAZORPAY_KEY_ID or SECRET correct? Try regenerating your API keys from your Razorpay Dashboard and add them to the Environment Variables (Settings).";
@@ -74,7 +74,7 @@ async function startServer() {
       	statusCode = 400;
         errorMessage = "Ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in Environment Variables (Settings).";
       }
-      res.status(statusCode).json({ error: errorMessage });
+      res.status(statusCode).json({ error: errorMessage, details: err });
     }
   });
 
