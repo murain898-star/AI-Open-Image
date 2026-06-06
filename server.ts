@@ -74,7 +74,7 @@ async function startServer() {
       	statusCode = 400;
         errorMessage = "Ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in Environment Variables (Settings).";
       }
-      res.status(statusCode).json({ error: errorMessage, details: err });
+      res.status(statusCode).json({ error: errorMessage, details: err ? String(err) : "Unknown error" });
     }
   });
 

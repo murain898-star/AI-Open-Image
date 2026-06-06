@@ -33,7 +33,13 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
         })
       });
       
-      const orderData = await res.json();
+      let orderData;
+      try {
+        const textRes = await res.text();
+        orderData = JSON.parse(textRes);
+      } catch (e) {
+        throw new Error(`Server returned invalid response (Status ${res.status}). Ensure your server is running and Environment Variables (API Keys) are set in the deployed app.`);
+      }
       
       if (!res.ok) {
         throw new Error(orderData.error || 'Failed to create order');
@@ -59,7 +65,13 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
               })
             });
             
-            const verifyData = await verifyRes.json();
+            let verifyData;
+            try {
+              const verifyTextRes = await verifyRes.text();
+              verifyData = JSON.parse(verifyTextRes);
+            } catch (e) {
+              throw new Error(`Server returned invalid response. Ensure your environment variables are configured. Status: ${verifyRes.status}`);
+            }
             
             if (verifyRes.ok && verifyData.status === 'success') {
               // Success!
