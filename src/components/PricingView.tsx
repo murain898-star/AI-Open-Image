@@ -404,7 +404,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold text-lg"
-                placeholder="Amount in Rupees"
+                placeholder="Amount in ₹ (Rupees)"
               />
             </div>
             <button

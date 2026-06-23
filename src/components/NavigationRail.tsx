@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Settings, User, Wand2, Video, Image as ImageIcon, CreditCard } from 'lucide-react';
+import { Home, Settings, User, Wand2, Video, Image as ImageIcon, CreditCard, Sparkles } from 'lucide-react';
 import { auth } from '../lib/firebase';
 
 interface NavigationRailProps {
@@ -13,6 +13,7 @@ export function NavigationRail({ currentView, setCurrentView }: NavigationRailPr
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'create', icon: Wand2, label: 'Create' },
     { id: 'video', icon: Video, label: 'Video' },
+    { id: 'upscale', icon: Sparkles, label: 'Upscale' },
     { id: 'pricing', icon: CreditCard, label: 'Pricing' },
     { id: 'settings', icon: Settings, label: 'Settings' },
   ];

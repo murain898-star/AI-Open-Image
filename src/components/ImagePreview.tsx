@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Image as ImageIcon, Play } from 'lucide-react';
+import { Download, Image as ImageIcon, Play, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { AppState } from '../types';
@@ -10,9 +10,10 @@ interface ImagePreviewProps {
   progressMsg: string | null;
   state: AppState;
   onAnimate?: () => void;
+  onUpscale?: () => void;
 }
 
-export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimate }: ImagePreviewProps) {
+export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimate, onUpscale }: ImagePreviewProps) {
   const handleDownload = () => {
     if (image) {
       const a = document.createElement('a');
@@ -56,6 +57,15 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
               <img src={image.url} alt="Generated Fashion" className="max-w-full max-h-[85vh] object-contain" />
             )}
             <div className="absolute top-4 right-4 flex gap-2">
+              {image.type === 'image' && onUpscale && (
+                <button
+                  onClick={onUpscale}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm transition-all hover:scale-105"
+                >
+                  <Sparkles className="w-4 h-4 text-emerald-205 animate-pulse" />
+                  AI Upscale (Gigapixel)
+                </button>
+              )}
               {image.type === 'image' && onAnimate && (
                 <button
                   onClick={onAnimate}

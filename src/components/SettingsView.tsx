@@ -90,7 +90,7 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">1. Usage Rights</h3>
                   <p>You retain all rights to the original images you upload. Images and videos generated using the Free plan are for personal use only. Commercial rights are granted only to Studio Pro and Agency plan subscribers.</p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">2. Credits and Billing</h3>
-                  <p>Credits are deducted upon successful generation. Generating an image costs 5 credits, while generating a video costs 20 credits. Subscriptions are billed monthly. Unused credits may roll over depending on your specific plan terms.</p>
+                  <p>Credits are deducted upon successful generation. Video generation costs depend on resolution (3 credits for 720p, 5 credits for 1080p, and 10 credits for 4K) multiplied by the video length. The base cost is for every 5 seconds. So a 10-second video costs 2x the base cost. Image generation ranges from 0 credits (Low Res) to 5 credits (Maximum quality). Subscriptions are billed monthly. Unused credits may roll over depending on your specific plan terms.</p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">3. Content Guidelines</h3>
                   <p>You agree not to upload or generate inappropriate, offensive, or illegal content in both images and videos. We reserve the right to suspend accounts violating these guidelines.</p>
                 </div>
@@ -118,7 +118,7 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">How do credits work?</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mt-1">Generating 1 image costs 5 credits. Generating 1 video costs 20 credits. You start with 50 free credits.</p>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation costs 0 to 5 credits based on quality. Generating a video costs between 3 to 10 credits based on resolution, and this cost multiplies for every 5 seconds of video length (e.g., a 10s video is 2x the base charge). You start with free credits based on your initial sign-up offer.</p>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Can I use the generated images and videos commercially?</h3>
