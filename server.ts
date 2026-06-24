@@ -37,34 +37,48 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  // API POST /api/generate
-  app.post("/api/generate", async (req, res) => {
+  // API POST create-order
+  app.all("/api/gemini/*", async (req, res) => {
     try {
-      const { state, apiKey: clientKey } = req.body;
-      const { GoogleGenAI } = await import('@google/genai');
-      
-      const requiresPaidKey = state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast';
-      let serverKey = process.env.GEMINI_API_KEY;
-      if (requiresPaidKey && process.env.API_KEY) {
-        serverKey = process.env.API_KEY;
-      }
-      
-      const authKey = clientKey || serverKey;
-      if (!authKey) {
-        return res.status(403).json({ error: "Missing API Key. Please provide one or configure it in Settings." });
+      const targetPath = req.originalUrl.replace('/api/gemini', '');
+      const targetUrl = `https://generativelanguage.googleapis.com${targetPath}`;
+      const serverKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+
+      if (!serverKey) {
+        return res.status(500).json({ error: "Server API key is not configured." });
       }
 
-      const ai = new GoogleGenAI({ apiKey: authKey });
-      const maxDim = state.quality === 'Low Res (Free)' ? 512 : 768;
+      const headers: any = {};
+      if (req.headers['content-type']) {
+        headers['content-type'] = req.headers['content-type'];
+      }
+      headers['x-goog-api-key'] = serverKey;
+
+      const options: any = {
+        method: req.method,
+        headers,
+      };
+
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        // req.body is already parsed as object by express.json(), so we need to stringify it back
+        options.body = JSON.stringify(req.body);
+      }
+
+      const googleRes = await fetch(targetUrl, options);
+      const data = await googleRes.text();
+
+      res.status(googleRes.status);
+      googleRes.headers.forEach((value, key) => {
+        // Exclude content-encoding to avoid double-compression issues
+        if (key.toLowerCase() !== 'content-encoding') {
+          res.setHeader(key, value);
+        }
+      });
       
-      // Basic generation placeholder logic 
-      // Instead of duplicating 300 lines of complex logic, I'll pass everything from client
-      // Or rather, the prompt and parts are best built on the client for now, and sent here just for the API call?
-      // Wait, is it safer to just do the GoogleGenAI call here?
-      
-      return res.status(400).json({ error: "Server side extraction not fully implemented here yet." });
+      res.send(data);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || "Unknown error" });
+      console.error("Proxy error:", err);
+      res.status(500).json({ error: "Failed to proxy request to Google Gen AI." });
     }
   });
 

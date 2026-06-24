@@ -71,27 +71,19 @@ function getApiKey(model: string): string {
     // Ignore ReferenceError if process is not defined
   }
 
-  // If the model requires a paid key, ALWAYS use the platform's key selector
-  if (requiresPaidKey && platformKey) {
-    return platformKey;
+  // If we are in the AI studio iframe, we use the injected platform key
+  // @ts-ignore
+  if (window.aistudio) {
+    if (requiresPaidKey && platformKey) return platformKey;
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) return import.meta.env.VITE_GEMINI_API_KEY;
+    // @ts-ignore
+    if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+    return platformKey || 'PROXY';
   }
 
-  // 1. Sabse pehle aapki .env file se VITE wali key check karega
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
-    // @ts-ignore
-    return import.meta.env.VITE_GEMINI_API_KEY;
-  }
-
-  // Vite statically replaces process.env.GEMINI_API_KEY with the actual string 
-  // because it's in the define block of vite.config.ts
-  // @ts-ignore
-  if (process.env.GEMINI_API_KEY) {
-    // @ts-ignore
-    return process.env.GEMINI_API_KEY;
-  }
-  
-  return platformKey || '';
+  // Always use a dummy key on the client to route through our secure backend proxy
+  return 'PROXY';
 }
 
 function extractBase64Data(dataUrl: string) {
@@ -116,6 +108,10 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   
   await ensureApiKey(modelName);
   const apiKey = getApiKey(modelName);
+  
+  if (!apiKey) {
+    throw new Error("Missing API Key. Please make sure your VITE_GEMINI_API_KEY is configured in your Environment Variables (like Vercel settings or .env file) to generate media.");
+  }
 
   const parts: any[] = [];
   let baseImageForVideo: { mimeType: string, data: string } | null = null;
@@ -257,7 +253,11 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
   const { GoogleGenAI } = await import("@google/genai");
 
   // Google Provider (Default)
-  const ai = new GoogleGenAI({ apiKey });
+  const aiOptions: any = { apiKey };
+  if (apiKey === 'PROXY') {
+    aiOptions.httpOptions = { baseUrl: window.location.origin + '/api/gemini' };
+  }
+  const ai = new GoogleGenAI(aiOptions);
 
   if (state.outputFormat === 'video') {
     if (onProgress) onProgress(`Starting video generation (Target: ${state.videoDuration}s)...`);
@@ -290,7 +290,10 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
         }
         throw new Error("Permission Denied (403): Your selected API key does not have access to Veo Video Generation. Please select a key from a paid Google Cloud project with Veo enabled, then try again.");
       }
-      throw error;
+      if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
+        throw new Error("Service Unavailable (503): Google's Gemini AI servers are currently experiencing very high demand. This is a temporary server issue, not a problem with your app or API key. Please try again in a few minutes.");
+      }
+      throw new Error(`API Error: ${errorMessage}`);
     }
 
     let currentVideo = operation.response?.generatedVideos?.[0]?.video;
@@ -327,11 +330,16 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
     if (!downloadLink) throw new Error("No video URI returned.");
     
     if (onProgress) onProgress("Downloading final video...");
-    const response = await fetch(downloadLink, {
+    let downloadUrl = downloadLink;
+    if (apiKey === 'PROXY' && downloadLink.startsWith('https://generativelanguage.googleapis.com')) {
+      downloadUrl = downloadLink.replace('https://generativelanguage.googleapis.com', window.location.origin + '/api/gemini');
+    }
+    
+    const response = await fetch(downloadUrl, {
       method: 'GET',
-      headers: {
+      headers: apiKey !== 'PROXY' ? {
         'x-goog-api-key': apiKey,
-      },
+      } : undefined,
     });
     const blob = await response.blob();
     return { url: URL.createObjectURL(blob), type: 'video' };
@@ -376,6 +384,10 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
       if (errorMessage.includes('429') || errorMessage.includes('quota')) {
         throw new Error(`Quota Exceeded (429): If you are using Gemini HQ or Veo Video, they DO NOT have a free tier (you must enable billing). Switch to 'Gemini (Fast)' for free usage. If you are already on Gemini (Fast), you have hit the free limit. Try again later.\n\nOriginal Error: ${errorMessage}`);
       }
+
+      if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
+        throw new Error("Service Unavailable (503): Google's Gemini AI servers are currently experiencing very high demand. This is a temporary server issue, not a problem with your app or API key. Please try again in a few minutes.");
+      }
       
       if (errorMessage.includes('safety') || errorMessage.includes('blocked') || errorMessage.includes('content policy')) {
         throw new Error("Safety Filter Blocked: Google's AI safety filters blocked this request. Try using a different reference image or simpler prompt.");
@@ -394,7 +406,11 @@ export async function analyzeVideo(videoBase64: string, question: string): Promi
   }
   
   const { GoogleGenAI } = await import("@google/genai");
-  const ai = new GoogleGenAI({ apiKey });
+  const aiOptions: any = { apiKey };
+  if (apiKey === 'PROXY') {
+    aiOptions.httpOptions = { baseUrl: window.location.origin + '/api/gemini' };
+  }
+  const ai = new GoogleGenAI(aiOptions);
   const { mimeType, data } = extractBase64Data(videoBase64);
 
   const response = await ai.models.generateContent({
