@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset } from '../types';
 import { Uploader } from './Uploader';
 import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { FidelityMode } from '../types';
 
 interface SidebarProps {
@@ -34,6 +33,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
 
     setIsEnhancingPrompt(true);
     try {
+      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
@@ -824,13 +824,15 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           <span className="text-gray-600 dark:text-gray-400 font-medium">Generation Cost:</span>
           <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
             {(() => {
-              const cost = state.outputFormat === 'video' 
+              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' ? 3 : 
                    state.quality === 'Ultra' ? 4 : 5);
+              const cost = baseCost * videoMultiplier;
               return `${cost} Credits`;
             })()}
           </span>
@@ -846,13 +848,15 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   : !state.outfitImage)) ||
             (state.background === 'Uploaded' && !state.backgroundImage) ||
             (() => {
-              const cost = state.outputFormat === 'video' 
+              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' ? 3 : 
                    state.quality === 'Ultra' ? 4 : 5);
+              const cost = baseCost * videoMultiplier;
               return userCredits < cost;
             })()
           }
@@ -864,13 +868,15 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               Generating...
             </>
           ) : (() => {
-              const cost = state.outputFormat === 'video' 
+              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' ? 3 : 
                    state.quality === 'Ultra' ? 4 : 5);
+              const cost = baseCost * videoMultiplier;
               return userCredits < cost;
             })() ? (
             <>

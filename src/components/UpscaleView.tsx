@@ -134,157 +134,164 @@ export function UpscaleView({
     setIsProcessing(true);
     setProgressStep(1);
     setProgressMsg("Scanning image channels & high-frequency noise...");
+    setError(null);
 
-    await new Promise(r => setTimeout(r, 1200));
+    try {
+      await new Promise(r => setTimeout(r, 1200));
 
-    setProgressStep(2);
-    setProgressMsg(`Initializing neural upscaling map (${scale}x Bicubic Grid)...`);
-    
-    // Create image element to read pixels
-    const img = new Image();
-    img.src = originalImage;
-    await new Promise((resolve) => {
-      img.onload = resolve;
-    });
-
-    const sw = img.width;
-    const sh = img.height;
-    const tw = sw * scale;
-    const th = sh * scale;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = tw;
-    canvas.height = th;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      setError("Unable to create canvas context.");
-      setIsProcessing(false);
-      return;
-    }
-
-    // Set upscale filters on canvas
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    await new Promise(r => setTimeout(r, 1000));
-
-    setProgressStep(3);
-    setProgressMsg("Drawing base high-fidelity canvas mapping...");
-    ctx.drawImage(img, 0, 0, tw, th);
-
-    await new Promise(r => setTimeout(r, 1200));
-
-    setProgressStep(4);
-    setProgressMsg("Reducing compression noise and fixing artifacts...");
-
-    // Fast local color denoising and smoothing simulation via soft unsharp blending
-    // Let's grab the pixel data
-    let imgData = ctx.getImageData(0, 0, tw, th);
-    let pixels = imgData.data;
-
-    // Apply color vibrancy and contrast improvements if toggled
-    if (vibrancy) {
-      setProgressStep(5);
-      setProgressMsg("Enhancing color vibrancy and catalog contrast...");
-      for (let i = 0; i < pixels.length; i += 4) {
-        let r = pixels[i];
-        let g = pixels[i + 1];
-        let b = pixels[i + 2];
-
-        // Soft contrast enhancer
-        r = Math.min(255, Math.max(0, ((r - 128) * 1.05) + 128));
-        g = Math.min(255, Math.max(0, ((g - 128) * 1.05) + 128));
-        b = Math.min(255, Math.max(0, ((b - 128) * 1.05) + 128));
-
-        // Soft saturation kick
-        const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
-        pixels[i] = Math.min(255, Math.max(0, gray + (r - gray) * 1.12));
-        pixels[i + 1] = Math.min(255, Math.max(0, gray + (g - gray) * 1.12));
-        pixels[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * 1.12));
-      }
-      ctx.putImageData(imgData, 0, 0);
-      await new Promise(r => setTimeout(r, 800));
-    }
-
-    if (sharpness > 0) {
-      setProgressStep(6);
-      setProgressMsg(`Running Gigapixel detail sharpen kernel (${sharpness}%) ...`);
+      setProgressStep(2);
+      setProgressMsg(`Initializing neural upscaling map (${scale}x Bicubic Grid)...`);
       
-      // Let's create an extreme-detailed sharpening convolution kernel
-      // Soft unsharp filter
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = tw;
-      tempCanvas.height = th;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (tempCtx) {
-        tempCtx.drawImage(canvas, 0, 0);
-        
-        // Grab pixels from backup
-        const tempImgData = tempCtx.getImageData(0, 0, tw, th);
-        const tempPixels = tempImgData.data;
-        
-        // Apply 3x3 Sharpen Kernel
-        // k is the sharpness intensity, customized by user
-        const k = (sharpness / 100) * 0.45;
-        
-        // Kernel:
-        //  0  -k   0
-        // -k 1+4k -k
-        //  0  -k   0
-        
-        // To keep performance high on large images, we can do an optimized sampling pass
-        // Or process columns in small chunks, or do a fast unsharp mask overlay with canvas mix mode!
-        // A canvas unsharp mask is EXTREMELY fast and doesn't freeze the tab!
-        // Unsharp Mask in canvas:
-        // 1. Draw blurred image
-        // 2. Blend with contrast difference
-        // Let's do a fast CSS filter unsharp mask blend which is highly efficient and perfectly smooth!
-        ctx.save();
-        ctx.globalCompositeOperation = 'difference';
-        ctx.filter = `blur(1.5px) contrast(120%)`;
-        ctx.drawImage(tempCanvas, 0, 0);
-        ctx.restore();
+      // Create image element to read pixels
+      const img = new Image();
+      img.src = originalImage;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => {
+          reject(new Error("CORS or Load Error"));
+        };
+      });
 
-        ctx.save();
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = k;
-        ctx.filter = `contrast(130%) brightness(101%)`;
-        ctx.drawImage(tempCanvas, 0, 0);
-        ctx.restore();
-        
-        // Re-read and apply soft cleanup
-        imgData = ctx.getImageData(0, 0, tw, th);
-        pixels = imgData.data;
-        const denoiseWeight = denoise / 100;
-        if (denoiseWeight > 0.1) {
-          // Soft bilateral smoothing
-          for (let i = 0; i < pixels.length - 8; i += 8) {
-            // Mix neighboring pixels slightly to reduce compression noise
-            pixels[i] = pixels[i] * (1 - denoiseWeight * 0.1) + pixels[i + 4] * (denoiseWeight * 0.1);
-            pixels[i+1] = pixels[i+1] * (1 - denoiseWeight * 0.1) + pixels[i + 5] * (denoiseWeight * 0.1);
-            pixels[i+2] = pixels[i+2] * (1 - denoiseWeight * 0.1) + pixels[i + 6] * (denoiseWeight * 0.1);
-          }
-          ctx.putImageData(imgData, 0, 0);
-        }
+      const sw = img.width;
+      const sh = img.height;
+      const tw = sw * scale;
+      const th = sh * scale;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = tw;
+      canvas.height = th;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error("Unable to create canvas context.");
       }
-      await new Promise(r => setTimeout(r, 1400));
+
+      // Set upscale filters on canvas
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      await new Promise(r => setTimeout(r, 1000));
+
+      setProgressStep(3);
+      setProgressMsg("Drawing base high-fidelity canvas mapping...");
+      ctx.drawImage(img, 0, 0, tw, th);
+
+      await new Promise(r => setTimeout(r, 1200));
+
+      setProgressStep(4);
+      setProgressMsg("Reducing compression noise and fixing artifacts...");
+
+      // Fast local color denoising and smoothing simulation via soft unsharp blending
+      // Let's grab the pixel data
+      let imgData = ctx.getImageData(0, 0, tw, th);
+      let pixels = imgData.data;
+
+      // Apply color vibrancy and contrast improvements if toggled
+      if (vibrancy) {
+        setProgressStep(5);
+        setProgressMsg("Enhancing color vibrancy and catalog contrast...");
+        for (let i = 0; i < pixels.length; i += 4) {
+          let r = pixels[i];
+          let g = pixels[i + 1];
+          let b = pixels[i + 2];
+
+          // Soft contrast enhancer
+          r = Math.min(255, Math.max(0, ((r - 128) * 1.05) + 128));
+          g = Math.min(255, Math.max(0, ((g - 128) * 1.05) + 128));
+          b = Math.min(255, Math.max(0, ((b - 128) * 1.05) + 128));
+
+          // Soft saturation kick
+          const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
+          pixels[i] = Math.min(255, Math.max(0, gray + (r - gray) * 1.12));
+          pixels[i + 1] = Math.min(255, Math.max(0, gray + (g - gray) * 1.12));
+          pixels[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * 1.12));
+        }
+        ctx.putImageData(imgData, 0, 0);
+        await new Promise(r => setTimeout(r, 800));
+      }
+
+      if (sharpness > 0) {
+        setProgressStep(6);
+        setProgressMsg(`Running Gigapixel detail sharpen kernel (${sharpness}%) ...`);
+        
+        // Let's create an extreme-detailed sharpening convolution kernel
+        // Soft unsharp filter
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = tw;
+        tempCanvas.height = th;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (tempCtx) {
+          tempCtx.drawImage(canvas, 0, 0);
+          
+          // Grab pixels from backup
+          const tempImgData = tempCtx.getImageData(0, 0, tw, th);
+          const tempPixels = tempImgData.data;
+          
+          // Apply 3x3 Sharpen Kernel
+          // k is the sharpness intensity, customized by user
+          const k = (sharpness / 100) * 0.45;
+          
+          // Kernel:
+          //  0  -k   0
+          // -k 1+4k -k
+          //  0  -k   0
+          
+          // To keep performance high on large images, we can do an optimized sampling pass
+          // Or process columns in small chunks, or do a fast unsharp mask overlay with canvas mix mode!
+          // A canvas unsharp mask is EXTREMELY fast and doesn't freeze the tab!
+          // Unsharp Mask in canvas:
+          // 1. Draw blurred image
+          // 2. Blend with contrast difference
+          // Let's do a fast CSS filter unsharp mask blend which is highly efficient and perfectly smooth!
+          ctx.save();
+          ctx.globalCompositeOperation = 'difference';
+          ctx.filter = `blur(1.5px) contrast(120%)`;
+          ctx.drawImage(tempCanvas, 0, 0);
+          ctx.restore();
+
+          ctx.save();
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = k;
+          ctx.filter = `contrast(130%) brightness(101%)`;
+          ctx.drawImage(tempCanvas, 0, 0);
+          ctx.restore();
+          
+          // Re-read and apply soft cleanup
+          imgData = ctx.getImageData(0, 0, tw, th);
+          pixels = imgData.data;
+          const denoiseWeight = denoise / 100;
+          if (denoiseWeight > 0.1) {
+            // Soft bilateral smoothing
+            for (let i = 0; i < pixels.length - 8; i += 8) {
+              // Mix neighboring pixels slightly to reduce compression noise
+              pixels[i] = pixels[i] * (1 - denoiseWeight * 0.1) + pixels[i + 4] * (denoiseWeight * 0.1);
+              pixels[i+1] = pixels[i+1] * (1 - denoiseWeight * 0.1) + pixels[i + 5] * (denoiseWeight * 0.1);
+              pixels[i+2] = pixels[i+2] * (1 - denoiseWeight * 0.1) + pixels[i + 6] * (denoiseWeight * 0.1);
+            }
+            ctx.putImageData(imgData, 0, 0);
+          }
+        }
+        await new Promise(r => setTimeout(r, 1400));
+      }
+
+      setProgressStep(7);
+      setProgressMsg("Completing Gigapixel resolution reconstruction...");
+      
+      // Save generated image
+      const finalDataUrl = canvas.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', 0.98);
+      setUpscaledImage(finalDataUrl);
+      setUserCredits(prev => Math.max(0, prev - cost));
+
+      setProgressStep(8);
+      setProgressMsg("Super-Resolution complete! Image ready.");
+      await new Promise(r => setTimeout(r, 800));
+    } catch (err: any) {
+      console.error("Upscale error:", err);
+      setError("Failed to process upscaling. The image may be too large or corrupted.");
+    } finally {
+      setIsProcessing(false);
+      setProgressStep(0);
     }
-
-    setProgressStep(7);
-    setProgressMsg("Completing Gigapixel resolution reconstruction...");
-    
-    // Save generated image
-    const finalDataUrl = canvas.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', 0.98);
-    setUpscaledImage(finalDataUrl);
-    setUserCredits(prev => Math.max(0, prev - cost));
-
-    setProgressStep(8);
-    setProgressMsg("Super-Resolution complete! Image ready.");
-    await new Promise(r => setTimeout(r, 800));
-    
-    setIsProcessing(false);
-    setProgressStep(0);
   };
 
   const handleDownload = () => {

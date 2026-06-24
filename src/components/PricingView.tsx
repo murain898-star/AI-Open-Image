@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, Check, Zap, Star, Crown, Info, ChevronRight, Briefcase, Building2, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
 
 interface PricingViewProps {
@@ -12,15 +12,37 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
   const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('1');
 
-  const initiatePayment = async (name: string, price: number, credits: number) => {
-    try {
-      if (!window.Razorpay) {
-        setPaymentError("Razorpay SDK is blocked. Please disable any ad-blockers, or try opening this app in a new tab by clicking the 'Open in New Tab' icon.");
+  const loadRazorpay = async (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (document.getElementById('razorpay-checkout-js') || window.Razorpay) {
+        resolve(true);
         return;
       }
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-js';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => {
+        console.error('Failed to load Razorpay');
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  const initiatePayment = async (name: string, price: number, credits: number) => {
+    try {
       setIsProcessing(true);
       setPaymentError(null);
       setPaymentSuccessMessage(null);
+      
+      const isLoaded = await loadRazorpay();
+      
+      if (!isLoaded || !window.Razorpay) {
+        setPaymentError("Razorpay SDK is blocked. Please disable any ad-blockers, or try opening this app in a new tab by clicking the 'Open in New Tab' icon.");
+        setIsProcessing(false);
+        return;
+      }
       
       // Create order via our backend
       const res = await fetch('/api/create-order', {

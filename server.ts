@@ -33,8 +33,40 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Middleware to parse JSON bodies
-  app.use(express.json());
+  // Middleware to parse JSON bodies with large limit for images
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // API POST /api/generate
+  app.post("/api/generate", async (req, res) => {
+    try {
+      const { state, apiKey: clientKey } = req.body;
+      const { GoogleGenAI } = await import('@google/genai');
+      
+      const requiresPaidKey = state.imageModel === 'gemini-hq' || state.imageModel === 'veo-fast';
+      let serverKey = process.env.GEMINI_API_KEY;
+      if (requiresPaidKey && process.env.API_KEY) {
+        serverKey = process.env.API_KEY;
+      }
+      
+      const authKey = clientKey || serverKey;
+      if (!authKey) {
+        return res.status(403).json({ error: "Missing API Key. Please provide one or configure it in Settings." });
+      }
+
+      const ai = new GoogleGenAI({ apiKey: authKey });
+      const maxDim = state.quality === 'Low Res (Free)' ? 512 : 768;
+      
+      // Basic generation placeholder logic 
+      // Instead of duplicating 300 lines of complex logic, I'll pass everything from client
+      // Or rather, the prompt and parts are best built on the client for now, and sent here just for the API call?
+      // Wait, is it safer to just do the GoogleGenAI call here?
+      
+      return res.status(400).json({ error: "Server side extraction not fully implemented here yet." });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Unknown error" });
+    }
+  });
 
   // API POST create-order
   app.post("/api/create-order", async (req, res) => {

@@ -31,9 +31,13 @@ export default function App() {
   const [upscaleTargetUrl, setUpscaleTargetUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('fashion_ai_theme') as ThemeMode;
-    if (savedTheme) {
-      setTheme(savedTheme);
+    try {
+      const savedTheme = localStorage.getItem('fashion_ai_theme') as ThemeMode;
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    } catch (e) {
+      console.warn("localStorage is not available");
     }
   }, []);
 
@@ -47,7 +51,10 @@ export default function App() {
     } else {
       root.classList.add(theme);
     }
-    localStorage.setItem('fashion_ai_theme', theme);
+    
+    try {
+      localStorage.setItem('fashion_ai_theme', theme);
+    } catch (e) {}
   }, [theme]);
 
   const [state, setState] = useState<AppState>({
@@ -108,7 +115,7 @@ export default function App() {
     setError(null);
     setProgressMsg(null);
     try {
-      const videoMultiplier = newState.outputFormat === 'video' ? Math.ceil(newState.videoDuration / 5) : 1;
+      const videoMultiplier = newState.outputFormat === 'video' ? Math.ceil((newState.videoDuration || 5) / 5) : 1;
       const baseCost = newState.outputFormat === 'video'
         ? (newState.videoResolution === '4K Ultra Master' ? 10 : newState.videoResolution === '1080p' ? 5 : 3)
         : (newState.quality === 'Low Res (Free)' ? 0 : 
@@ -145,13 +152,17 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const savedPresets = localStorage.getItem('fashion_ai_presets');
-    if (savedPresets) {
-      try {
-        setPresets(JSON.parse(savedPresets));
-      } catch (e) {
-        console.error("Failed to parse presets", e);
+    try {
+      const savedPresets = localStorage.getItem('fashion_ai_presets');
+      if (savedPresets) {
+        try {
+          setPresets(JSON.parse(savedPresets));
+        } catch (e) {
+          console.error("Failed to parse presets", e);
+        }
       }
+    } catch (e) {
+      console.warn("localStorage not available for presets");
     }
   }, []);
 
@@ -164,7 +175,9 @@ export default function App() {
     };
     const updated = [...presets, newPreset];
     setPresets(updated);
-    localStorage.setItem('fashion_ai_presets', JSON.stringify(updated));
+    try {
+      localStorage.setItem('fashion_ai_presets', JSON.stringify(updated));
+    } catch (e) {}
   };
 
   const handleLoadPreset = (preset: Preset) => {
@@ -177,7 +190,9 @@ export default function App() {
   const handleDeletePreset = (id: string) => {
     const updated = presets.filter(p => p.id !== id);
     setPresets(updated);
-    localStorage.setItem('fashion_ai_presets', JSON.stringify(updated));
+    try {
+      localStorage.setItem('fashion_ai_presets', JSON.stringify(updated));
+    } catch (e) {}
   };
 
   const handleGenerate = async () => {
@@ -190,7 +205,7 @@ export default function App() {
     setState(currentState);
 
     try {
-      const videoMultiplier = currentState.outputFormat === 'video' ? Math.ceil(currentState.videoDuration / 5) : 1;
+      const videoMultiplier = currentState.outputFormat === 'video' ? Math.ceil((currentState.videoDuration || 5) / 5) : 1;
       const baseCost = currentState.outputFormat === 'video' 
         ? (currentState.videoResolution === '4K Ultra Master' ? 10 : currentState.videoResolution === '1080p' ? 5 : 3)
         : (currentState.quality === 'Low Res (Free)' ? 0 : 

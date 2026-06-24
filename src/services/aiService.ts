@@ -1,5 +1,4 @@
 import { AppState } from "../types";
-import { GoogleGenAI } from "@google/genai";
 
 // Helper to resize image before sending to API to prevent "Payload Too Large" errors
 async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 768): Promise<string> {
@@ -62,15 +61,29 @@ async function ensureApiKey(model: string): Promise<void> {
 function getApiKey(model: string): string {
   const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
   
-  // If the model requires a paid key, ALWAYS use the platform's key selector
-  if (requiresPaidKey && process.env.API_KEY) {
-    return process.env.API_KEY;
+  let platformKey = '';
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      platformKey = process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignore ReferenceError if process is not defined
   }
 
+  // If the model requires a paid key, ALWAYS use the platform's key selector
+  if (requiresPaidKey && platformKey) {
+    return platformKey;
+  }
+
+  // Vite statically replaces process.env.GEMINI_API_KEY with the actual string 
+  // because it's in the define block of vite.config.ts
+  // @ts-ignore
   if (process.env.GEMINI_API_KEY) {
+    // @ts-ignore
     return process.env.GEMINI_API_KEY;
   }
-  return '';
+  
+  return platformKey || '';
 }
 
 function extractBase64Data(dataUrl: string) {
@@ -232,6 +245,9 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
   let finalPrompt = prompt;
   parts.push({ text: finalPrompt });
 
+  // Dynamically import to prevent process.env lookup errors at module load time in browser
+  const { GoogleGenAI } = await import("@google/genai");
+
   // Google Provider (Default)
   const ai = new GoogleGenAI({ apiKey });
 
@@ -368,6 +384,8 @@ export async function analyzeVideo(videoBase64: string, question: string): Promi
   if (!apiKey) {
     throw new Error("API key is missing. Please check your environment variables.");
   }
+  
+  const { GoogleGenAI } = await import("@google/genai");
   const ai = new GoogleGenAI({ apiKey });
   const { mimeType, data } = extractBase64Data(videoBase64);
 

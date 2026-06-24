@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Open Image</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <meta name="google-site-verification" content="Fx5EZ6HxLnePmLxUWBGvlVldl0MK4teXNPzcfzCmnbw" />
+    <script>
+      // Suppress cross-origin "Script error." (often from external iframes like Firebase Auth)
+      // from being reported to the AI Studio platform to avoid false positive error messages.
+      window.addEventListener('error', function(e) {
+        if (e.message === 'Script error.') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+      window.onerror = function(msg) {
+        if (msg === 'Script error.') return true;
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

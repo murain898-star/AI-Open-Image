@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import aiStudioConfig from '../../firebase-applet-config.json';
 
@@ -21,7 +21,10 @@ export const isFirebaseConfigured = Boolean(
 );
 
 export const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
-export const auth = app ? getAuth(app) : null;
+export const auth = app ? initializeAuth(app, {
+  persistence: browserLocalPersistence,
+  popupRedirectResolver: browserPopupRedirectResolver
+}) : null;
 export const db = app ? getFirestore(app, firebaseConfig.firestoreDatabaseId) : null;
 export const googleProvider = new GoogleAuthProvider();
 
