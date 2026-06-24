@@ -118,7 +118,7 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">How do credits work?</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation costs 0 to 5 credits based on quality. Generating a video costs between 3 to 10 credits based on resolution, and this cost multiplies for every 5 seconds of video length (e.g., a 10s video is 2x the base charge). You start with free credits based on your initial sign-up offer.</p>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation costs 0 to 5 credits based on quality. Generating a video costs between 3 to 10 credits based on resolution, and this cost multiplies for every 5 seconds of video length (e.g., a 10s video is 2x the base charge).</p>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Can I use the generated images and videos commercially?</h3>

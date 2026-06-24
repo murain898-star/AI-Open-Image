@@ -27,7 +27,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
-  const [userCredits, setUserCredits] = useState<number>(50); // Default given 50 free credits
+  const [userCredits, setUserCredits] = useState<number>(0); // Default 0 credits
   const [upscaleTargetUrl, setUpscaleTargetUrl] = useState<string | null>(null);
 
   useEffect(() => {

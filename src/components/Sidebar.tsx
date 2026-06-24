@@ -79,18 +79,28 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Generate high-res model photos</p>
         </div>
-        <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Balance</span>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{userCredits} Credits</span>
-            <button 
-              onClick={onUpgradeToPro}
-              className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors"
-            >
-              BUY
-            </button>
+        {userCredits > 0 ? (
+          <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Balance</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{userCredits} Credits</span>
+              <button 
+                onClick={onUpgradeToPro}
+                className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors"
+              >
+                BUY
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <button 
+            onClick={onUpgradeToPro}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl border border-indigo-500 shadow-sm transition-all"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-bold">Buy Credits</span>
+          </button>
+        )}
       </div>
 
       <div className="p-6 flex-1 space-y-8">

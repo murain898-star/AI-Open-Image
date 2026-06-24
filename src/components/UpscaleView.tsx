@@ -298,7 +298,7 @@ export function UpscaleView({
     if (!upscaledImage) return;
     const a = document.createElement('a');
     a.href = upscaledImage;
-    a.download = `fashion-ai-gigapixel-${scale}x-${Date.now()}.${format}`;
+    a.download = `AI-Open-Image-gigapixel-${scale}x-${Date.now()}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

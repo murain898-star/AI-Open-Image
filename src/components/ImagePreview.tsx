@@ -18,7 +18,7 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
     if (image) {
       const a = document.createElement('a');
       a.href = image.url;
-      a.download = `fashion-ai-${Date.now()}.${image.type === 'video' ? 'mp4' : 'png'}`;
+      a.download = `AI-Open-Image-${Date.now()}.${image.type === 'video' ? 'mp4' : 'png'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
