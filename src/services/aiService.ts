@@ -50,6 +50,7 @@ async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 
 
 async function ensureApiKey(model: string): Promise<void> {
   const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
+
   if (requiresPaidKey && window.aistudio && window.aistudio.hasSelectedApiKey) {
     const hasKey = await window.aistudio.hasSelectedApiKey();
     if (!hasKey) {
