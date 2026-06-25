@@ -15,9 +15,10 @@ interface SidebarProps {
   onLoadPreset: (preset: Preset) => void;
   onDeletePreset: (id: string) => void;
   userCredits: number;
+  freeGenerationsUsed: number;
 }
 
-export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeToPro, presets, onSavePreset, onLoadPreset, onDeletePreset, userCredits }: SidebarProps) {
+export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeToPro, presets, onSavePreset, onLoadPreset, onDeletePreset, userCredits, freeGenerationsUsed }: SidebarProps) {
   const [isSavingPreset, setIsSavingPreset] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
@@ -64,17 +65,19 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
       <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="AI Open Image" 
-              className="w-8 h-8 object-contain rounded-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = document.getElementById('sidebar-logo-fallback');
-                if (fallback) fallback.style.display = 'block';
-              }}
-            />
-            <Wand2 id="sidebar-logo-fallback" className="hidden w-6 h-6 text-indigo-600" />
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+              <img 
+                src="/logo.png?v=7" 
+                alt="AI Open Image" 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.getElementById('sidebar-logo-fallback');
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <Wand2 id="sidebar-logo-fallback" className="hidden w-5 h-5 text-indigo-600" />
+            </div>
             AI Open Image
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Generate high-res model photos</p>
@@ -834,9 +837,9 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           <span className="text-gray-600 dark:text-gray-400 font-medium">Generation Cost:</span>
           <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
             {(() => {
-              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
               const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
@@ -858,9 +861,12 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   : !state.outfitImage)) ||
             (state.background === 'Uploaded' && !state.backgroundImage) ||
             (() => {
-              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
+              if (isFreeTier && freeGenerationsUsed >= 3) return true;
+              
+              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
               const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
@@ -878,17 +884,39 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               Generating...
             </>
           ) : (() => {
-              const videoMultiplier = state.outputFormat === 'video' ? Math.ceil((state.videoDuration || 5) / 5) : 1;
+              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
+              if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
+              
+              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
               const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 10 : state.videoResolution === '1080p' ? 5 : 3)
+                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' ? 3 : 
                    state.quality === 'Ultra' ? 4 : 5);
               const cost = baseCost * videoMultiplier;
-              return userCredits < cost;
-            })() ? (
+              return userCredits < cost ? 'insufficient' : 'ok';
+            })() === 'limit_reached' ? (
+            <>
+              <Wand2 className="w-4 h-4" />
+              Free Limit Reached (Upgrade)
+            </>
+          ) : (() => {
+              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
+              if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
+              
+              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+              const baseCost = state.outputFormat === 'video' 
+                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
+                : (state.quality === 'Low Res (Free)' ? 0 : 
+                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
+                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
+                   state.quality === '4K' ? 3 : 
+                   state.quality === 'Ultra' ? 4 : 5);
+              const cost = baseCost * videoMultiplier;
+              return userCredits < cost ? 'insufficient' : 'ok';
+            })() === 'insufficient' ? (
             <>
               <Wand2 className="w-4 h-4" />
               Insufficient Credits

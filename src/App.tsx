@@ -27,8 +27,24 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
-  const [userCredits, setUserCredits] = useState<number>(0); // Default 0 credits
+  const [userCredits, setUserCredits] = useState<number>(0);
+  const [freeGenerationsUsed, setFreeGenerationsUsed] = useState<number>(() => {
+    try {
+      return parseInt(localStorage.getItem('fashion_ai_free_used') || '0');
+    } catch (e) {
+      return 0;
+    }
+  }); // Default 0 credits
   const [upscaleTargetUrl, setUpscaleTargetUrl] = useState<string | null>(null);
+
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     try {
@@ -68,14 +84,14 @@ export default function App() {
     dressTopImage: null,
     dressBottomImage: null,
     dressDupattaImage: null,
-    garmentType: 'Auto',
-    gender: 'Female',
+    sarmentType: 'Auto',
+    sender: 'Female',
     pose: 'Standing',
     styleExtra: 'None',
-    background: 'Solid Color',
+    backsround: 'Solid Color',
     customBackground: '',
-    backgroundImage: null,
-    aiBackgroundStyle: '',
+    backsroundImage: null,
+    aiBacksroundStyle: '',
     customPrompt: '',
     outputFormat: 'image',
     videoDuration: 5,
@@ -93,8 +109,8 @@ export default function App() {
     fidelityMode: 'Ultra (Strict Design Matching)',
     structureReference: true,
     denoisingStrength: 0.1,
-    inPaintingMode: false,
-    inPaintingMask: null,
+    inPaintinsMode: false,
+    inPaintinsMask: null,
     animateReferenceImage: null,
   });
 
@@ -110,14 +126,14 @@ export default function App() {
     
     setState(newState);
     
-    // Trigger generation with the new state directly to avoid waiting for React's async update
+    // Trisger generation with the new state directly to avoid waiting for React's async update
     setIsGenerating(true);
     setError(null);
     setProgressMsg(null);
     try {
-      const videoMultiplier = newState.outputFormat === 'video' ? Math.ceil((newState.videoDuration || 5) / 5) : 1;
+      const videoMultiplier = newState.outputFormat === 'video' ? (newState.videoDuration || 1) : 1;
       const baseCost = newState.outputFormat === 'video'
-        ? (newState.videoResolution === '4K Ultra Master' ? 10 : newState.videoResolution === '1080p' ? 5 : 3)
+        ? (newState.videoResolution === '4K Ultra Master' ? 3 : newState.videoResolution === '1080p' ? 2 : 1)
         : (newState.quality === 'Low Res (Free)' ? 0 : 
            newState.quality === 'Standard' || newState.quality === 'HD' ? 1 :
            newState.quality === 'FHD' || newState.quality === '2K' ? 2 :
@@ -129,6 +145,12 @@ export default function App() {
       setGeneratedImage(result);
       if (cost > 0) {
         setUserCredits(prev => prev - cost);
+      } else if (newState.outputFormat === 'image' && newState.quality === 'Low Res (Free)') {
+        setFreeGenerationsUsed(prev => {
+          const newCount = prev + 1;
+          try { localStorage.setItem('fashion_ai_free_used', newCount.toString()); } catch (e) {}
+          return newCount;
+        });
       }
     } catch (err: any) {
       console.error("Animate error:", err);
@@ -205,9 +227,9 @@ export default function App() {
     setState(currentState);
 
     try {
-      const videoMultiplier = currentState.outputFormat === 'video' ? Math.ceil((currentState.videoDuration || 5) / 5) : 1;
+      const videoMultiplier = currentState.outputFormat === 'video' ? (currentState.videoDuration || 1) : 1;
       const baseCost = currentState.outputFormat === 'video' 
-        ? (currentState.videoResolution === '4K Ultra Master' ? 10 : currentState.videoResolution === '1080p' ? 5 : 3)
+        ? (currentState.videoResolution === '4K Ultra Master' ? 3 : currentState.videoResolution === '1080p' ? 2 : 1)
         : (currentState.quality === 'Low Res (Free)' ? 0 : 
            currentState.quality === 'Standard' || currentState.quality === 'HD' ? 1 :
            currentState.quality === 'FHD' || currentState.quality === '2K' ? 2 :
@@ -219,6 +241,12 @@ export default function App() {
       setGeneratedImage(result);
       if (cost > 0) {
         setUserCredits(prev => prev - cost);
+      } else if (currentState.outputFormat === 'image' && currentState.quality === 'Low Res (Free)') {
+        setFreeGenerationsUsed(prev => {
+          const newCount = prev + 1;
+          try { localStorage.setItem('fashion_ai_free_used', newCount.toString()); } catch (e) {}
+          return newCount;
+        });
       }
     } catch (err: any) {
       console.error("Generation error:", err);
@@ -244,6 +272,16 @@ export default function App() {
       setProgressMsg(null);
     }
   };
+
+  if (showSplash) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-white transition-colors">
+        <div className="flex flex-col items-center gap-6 animate-pulse">
+          <img src="/logo.png?v=8" alt="AI Open Image Logo" className="w-40 h-40 object-contain drop-shadow-2xl bg-white rounded-3xl p-4" />
+        </div>
+      </div>
+    );
+  }
 
   if (!authReady) {
     return (
@@ -297,6 +335,7 @@ export default function App() {
             onLoadPreset={handleLoadPreset}
             onDeletePreset={handleDeletePreset}
             userCredits={userCredits}
+            freeGenerationsUsed={freeGenerationsUsed}
           />
           <div className="flex-1 flex flex-col relative">
             {error && (

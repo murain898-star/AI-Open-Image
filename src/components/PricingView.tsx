@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Check, Zap, Star, Crown, Info, ChevronRight, Briefcase, Building2, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
+import { CreditCard, Check, Zap, Star, Crown, Info, ChevronRight, Briefcase, Building2, Smartphone, ShieldCheck, Loader2, Image as ImageIcon, Wand2 } from 'lucide-react';
 
 interface PricingViewProps {
   onPurchaseSuccess?: (credits: number) => void;
@@ -268,6 +268,52 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
           </p>
         </div>
 
+        {/* Trial Plan Banner */}
+        <div className="bg-gradient-to-r from-pink-500 to-purple-600 rounded-3xl p-1 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-[23px] p-6 md:p-8 flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full text-sm font-bold mb-4">
+                <Zap className="w-4 h-4" /> Try Before You Buy
+              </div>
+              <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">₹10 Quick Trial</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
+                Not sure yet? Get 1 Credit to try our premium AI generation for just ₹10. See the magic for yourself!
+              </p>
+              <button 
+                onClick={() => initiatePayment('Trial Plan', 10, 1)}
+                disabled={isProcessing}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-2 text-lg"
+              >
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Try Now for ₹10'}
+              </button>
+            </div>
+            
+            <div className="w-full md:w-1/2 lg:w-5/12">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 relative overflow-hidden">
+                <div className="absolute top-2 right-2 bg-black/50 backdrop-blur text-white text-xs px-2 py-1 rounded font-medium">Tutorial</div>
+                <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
+                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 mix-blend-overlay"></div>
+                   <div className="flex items-center gap-4 w-full px-6">
+                      <div className="flex-1 h-32 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center p-2 text-center shadow-sm relative">
+                        <ImageIcon className="w-8 h-8 text-gray-400 mb-1" />
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">1. Upload Photo</span>
+                      </div>
+                      <div className="w-8 flex justify-center">
+                        <ChevronRight className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <div className="flex-1 h-32 bg-white dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center p-2 text-center shadow-sm relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-500 opacity-20"></div>
+                        <Wand2 className="w-8 h-8 text-indigo-500 mb-1 relative z-10" />
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-300 relative z-10">2. Generate AI</span>
+                      </div>
+                   </div>
+                </div>
+                <p className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">See how it works instantly</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Credit Cost Breakdown */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
@@ -288,9 +334,9 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Video Generation (Veo)</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">3 Credits (₹30)</span></li>
-                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">5 Credits (₹50)</span></li>
-                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">10 Credits (₹100)</span></li>
+                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">1 Credit/sec (₹10/s)</span></li>
+                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">2 Credits/sec (₹20/s)</span></li>
+                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">3 Credits/sec (₹30/s)</span></li>
               </ul>
             </div>
           </div>
