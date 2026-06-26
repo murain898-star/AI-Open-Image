@@ -277,7 +277,7 @@ export default function App() {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-white transition-colors">
         <div className="flex flex-col items-center gap-6 animate-pulse">
-          <img src="/logo.png?v=8" alt="AI Open Image Logo" className="w-40 h-40 object-contain drop-shadow-2xl bg-white rounded-3xl p-4" />
+          <img src="/Logo.png" alt="AI Open Image Logo" className="w-40 h-40 object-contain drop-shadow-2xl bg-white rounded-3xl p-4" />
         </div>
       </div>
     );

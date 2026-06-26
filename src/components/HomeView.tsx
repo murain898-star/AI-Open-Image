@@ -15,7 +15,7 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
           <div className="relative z-10 max-w-2xl">
             <div className="flex items-center gap-4 mb-4">
               <img 
-                src="/logo.png?v=7" 
+                src="/Logo.png" 
                 alt="AI Open Image" 
                 className="w-16 h-16 object-contain rounded-2xl shadow-lg bg-white p-2"
                 onError={(e) => {

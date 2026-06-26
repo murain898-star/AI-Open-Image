@@ -67,7 +67,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0">
               <img 
-                src="/logo.png?v=7" 
+                src="/Logo.png" 
                 alt="AI Open Image" 
                 className="w-full h-full object-contain"
                 onError={(e) => {

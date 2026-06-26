@@ -124,7 +124,7 @@ export function LoginView() {
         <div className="p-8 text-center">
           <div className="relative mx-auto mb-6 w-24 h-24">
             <img 
-              src="/logo.png?v=7" 
+              src="/Logo.png" 
               alt="AI Open Image Logo" 
               className="w-full h-full object-contain rounded-2xl shadow-sm bg-white p-2"
               onError={(e) => {
