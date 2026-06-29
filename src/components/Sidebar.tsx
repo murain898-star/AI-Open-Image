@@ -843,8 +843,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' ? 3 : 
-                   state.quality === 'Ultra' ? 4 : 5);
+                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
               const cost = baseCost * videoMultiplier;
               return `${cost} Credits`;
             })()}
@@ -870,8 +869,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' ? 3 : 
-                   state.quality === 'Ultra' ? 4 : 5);
+                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
               const cost = baseCost * videoMultiplier;
               return userCredits < cost;
             })()
@@ -893,8 +891,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' ? 3 : 
-                   state.quality === 'Ultra' ? 4 : 5);
+                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
               const cost = baseCost * videoMultiplier;
               return userCredits < cost ? 'insufficient' : 'ok';
             })() === 'limit_reached' ? (
@@ -912,8 +909,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' ? 3 : 
-                   state.quality === 'Ultra' ? 4 : 5);
+                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
               const cost = baseCost * videoMultiplier;
               return userCredits < cost ? 'insufficient' : 'ok';
             })() === 'insufficient' ? (

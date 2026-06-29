@@ -172,18 +172,18 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Image Generation</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex justify-between"><span>Low Res (Draft)</span> <span className="font-medium text-green-600 dark:text-green-400">Free (0 Credits)</span></li>
-                <li className="flex justify-between"><span>Standard / HD</span> <span className="font-medium">1 Credit (₹10)</span></li>
-                <li className="flex justify-between"><span>FHD / 2K</span> <span className="font-medium">2 Credits (₹20)</span></li>
-                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">3-4 Credits (₹30-₹40)</span></li>
-                <li className="flex justify-between"><span>Gigapixel</span> <span className="font-medium">5 Credits (₹50)</span></li>
+                <li className="flex justify-between"><span>Standard / HD</span> <span className="font-medium">1 Credit</span></li>
+                <li className="flex justify-between"><span>FHD / 2K</span> <span className="font-medium">2 Credits</span></li>
+                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">3 Credits</span></li>
+                <li className="flex justify-between"><span>Gigapixel</span> <span className="font-medium">4 Credits</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Video Generation (Veo)</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">1 Credit/sec (₹10/s)</span></li>
-                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">2 Credits/sec (₹20/s)</span></li>
-                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">3 Credits/sec (₹30/s)</span></li>
+                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">1 Credit/sec</span></li>
+                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">2 Credits/sec</span></li>
+                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">3 Credits/sec</span></li>
               </ul>
             </div>
           </div>
