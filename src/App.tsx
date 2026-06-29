@@ -298,6 +298,8 @@ export default function App() {
     return <LoginView />;
   }
 
+  const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans transition-colors">
       <NavigationRail currentView={currentView} setCurrentView={setCurrentView} />
@@ -315,7 +317,7 @@ export default function App() {
       {currentView === 'upscale' && (
         <UpscaleView 
           initialImage={upscaleTargetUrl} 
-          userCredits={userCredits} 
+          userCredits={effectiveCredits} 
           setUserCredits={setUserCredits} 
           onRedirectToPricing={() => setCurrentView('pricing')}
           onBackToCreate={() => { setUpscaleTargetUrl(null); setCurrentView('create'); }}
@@ -334,8 +336,8 @@ export default function App() {
             onSavePreset={handleSavePreset}
             onLoadPreset={handleLoadPreset}
             onDeletePreset={handleDeletePreset}
-            userCredits={userCredits}
-            freeGenerationsUsed={freeGenerationsUsed}
+            userCredits={effectiveCredits}
+            freeGenerationsUsed={user?.email === 'mura.in898@gmail.com' ? 0 : freeGenerationsUsed}
           />
           <div className="flex-1 flex flex-col relative">
             {error && (

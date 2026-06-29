@@ -138,7 +138,8 @@ export function LoginView() {
               <Sparkles className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight transition-colors">AI Open Image</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight transition-colors">ai open image</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-2 transition-colors">ai open image is an artificial intelligence platform for image and video generation and processing.</p>
           <p className="text-gray-500 dark:text-gray-400 mb-8 transition-colors">Sign in to create your cinematic fashion masterpieces.</p>
           
           {error && (
@@ -161,7 +162,7 @@ export function LoginView() {
                     <input 
                       type="email" 
                       value={email}
-                      onChanse={(e) => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="Email address" 
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                       required
@@ -174,11 +175,11 @@ export function LoginView() {
                     <input 
                       type="password" 
                       value={password}
-                      onChanse={(e) => setPassword(e.target.value)}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password (min 6 chars)" 
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                       required
-                      minLensth={6}
+                      minLength={6}
                     />
                   </div>
                 </div>
@@ -208,7 +209,7 @@ export function LoginView() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  Goosle
+                  Google
                 </button>
               </div>
 
@@ -228,8 +229,12 @@ export function LoginView() {
           )}
         </div>
         <div className="bg-gray-50 dark:bg-gray-800/50 px-8 py-4 border-t border-gray-100 dark:border-gray-700 text-center transition-colors">
+          <div className="flex justify-center gap-4 mb-2 text-xs text-indigo-600 dark:text-indigo-400">
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>
+            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms of Service</a>
+          </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono transition-colors">
-            Project: {auth?.app.options.projectId || 'Loading...'}
+            ai open image
           </p>
         </div>
       </div>
