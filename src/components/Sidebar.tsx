@@ -325,29 +325,6 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           )}
         </div>
 
-        {/* Mode Selection */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
-            <Layout className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            Studio Mode
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['saree', 'outfit'] as AppMode[]).map(mode => (
-              <button
-                key={mode}
-                onClick={() => updateState('mode', mode)}
-                className={`py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
-                  state.mode === mode
-                    ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
-                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                {mode === 'saree' ? 'Saree Studio' : 'Outfit Studio'}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Uploads */}
         <div className="space-y-4">
           <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -359,7 +336,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
             <select
               value={state.garmentType}
-              onChange={e => updateState('garmentType', e.target.value as any)}
+              onChange={e => {
+                const val = e.target.value as any;
+                updateState('garmentType', val);
+                updateState('mode', val === 'Saree' ? 'saree' : 'outfit');
+              }}
               className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
             >
               <option value="Auto">Auto-detect</option>
