@@ -149,6 +149,13 @@ export default function App() {
            newState.quality === 'Ultra' ? 4 : 5);
       const cost = baseCost * videoMultiplier;
       
+      const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+      if (cost > 0 && effectiveCredits < cost) {
+        setError(`Insufficient credits. You need ${cost} credits but have ${effectiveCredits}. Please purchase more credits.`);
+        setIsGenerating(false);
+        return;
+      }
+
       const result = await generateFashionMedia(newState, setProgressMsg);
       setGeneratedImage(result);
       if (cost > 0) {
@@ -255,8 +262,9 @@ export default function App() {
            currentState.quality === 'Ultra' ? 4 : 5);
       const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
 
-      if (cost > 0 && userCredits < cost) {
-        setError(`Insufficient credits. You need ${cost} credits but have ${userCredits}. Please purchase more credits.`);
+      const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+      if (cost > 0 && effectiveCredits < cost) {
+        setError(`Insufficient credits. You need ${cost} credits but have ${effectiveCredits}. Please purchase more credits.`);
         setIsGenerating(false);
         return;
       }

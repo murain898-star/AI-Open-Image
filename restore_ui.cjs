@@ -1,112 +1,15 @@
-import React, { useState } from 'react';
-import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset, CreationType } from '../types';
-import { Uploader } from './Uploader';
-import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus } from 'lucide-react';
-import { FidelityMode } from '../types';
+const fs = require('fs');
+let code = fs.readFileSync('sidebar_current.txt', 'utf-8');
 
-interface SidebarProps {
-  state: AppState;
-  setState: React.Dispatch<React.SetStateAction<AppState>>;
-  onGenerate: () => void;
-  isGenerating: boolean;
-  onUpgradeToPro: () => void;
-  presets: Preset[];
-  onSavePreset: (name: string) => void;
-  onLoadPreset: (preset: Preset) => void;
-  onDeletePreset: (id: string) => void;
-  userCredits: number;
-  freeGenerationsUsed: number;
+const startIdx = code.indexOf('<div className="p-6 flex-1 space-y-8 overflow-y-auto">');
+const endIdx = code.indexOf('<div className="p-6 border-t border-gray-100');
+
+if (startIdx === -1 || endIdx === -1) {
+  console.log("Could not find start or end index");
+  process.exit(1);
 }
 
-export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeToPro, presets, onSavePreset, onLoadPreset, onDeletePreset, userCredits, freeGenerationsUsed }: SidebarProps) {
-  const [isSavingPreset, setIsSavingPreset] = useState(false);
-  const [presetName, setPresetName] = useState('');
-  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
-
-  const handleEnhancePrompt = async () => {
-    if (!state.customPrompt.trim()) return;
-    
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      alert("API key is missing. Please check your environment variables.");
-      return;
-    }
-
-    setIsEnhancingPrompt(true);
-    try {
-      const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: `User idea: ${state.customPrompt}`,
-        config: {
-          systemInstruction: "You are the AI Fashion Architect for a high-end fashion app. Your job is to take a simple user idea and turn it into a 'Cinematic Masterpiece Prompt' optimized for image generation.\n\nGuidelines:\n\nVisual Detail: Describe lighting (cinematic, volumetric), camera angle, and texture (hyper-realistic, 4k, 8k).\n\nPose & Expression: Focus on the model's pose and expression.\n\nConstraint: Keep the prompt under 100 words but make it extremely descriptive.\n\nOutput Format: Provide only the final refined prompt. Do not add conversational filler."
-        }
-      });
-      if (response.text) {
-        updateState('customPrompt', response.text.trim());
-      }
-    } catch (error: any) {
-      console.error('Error enhancing prompt:', error);
-      alert(error.message || "Failed to enhance prompt. Please check your API key.");
-    } finally {
-      setIsEnhancingPrompt(false);
-    }
-  };
-
-  const updateState = (key: keyof AppState, value: any) => {
-    setState(prev => ({ ...prev, [key]: value }));
-  };
-
-
-
-  return (
-    <div className="w-80 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors">
-      <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-4 shrink-0">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-              <img 
-                src="/Logo.png" 
-                alt="AI Open Image" 
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const fallback = document.getElementById('sidebar-logo-fallback');
-                  if (fallback) fallback.style.display = 'block';
-                }}
-              />
-              <Wand2 id="sidebar-logo-fallback" className="hidden w-5 h-5 text-indigo-600" />
-            </div>
-            AI Open Image
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Generate high-res model photos</p>
-        </div>
-        {userCredits > 0 ? (
-          <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Balance</span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{userCredits} Credits</span>
-              <button 
-                onClick={onUpgradeToPro}
-                className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-md font-bold hover:bg-indigo-700 transition-colors"
-              >
-                BUY
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button 
-            onClick={onUpgradeToPro}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl border border-indigo-500 shadow-sm transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-bold">Buy Credits</span>
-          </button>
-        )}
-      </div>
-
-      <div className="p-6 flex-1 space-y-8 overflow-y-auto">
+const newScrollContent = `<div className="p-6 flex-1 space-y-8 overflow-y-auto">
         {/* 1. Image Model */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -118,31 +21,31 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <>
                 <button
                   onClick={() => { updateState('imageModel', 'gemini-fast'); updateState('outputFormat', 'image'); }}
-                  className={`py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={\`py-2 px-3 text-sm font-medium rounded-lg transition-colors \${
                     state.imageModel === 'gemini-fast'
                       ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                  }\`}
                 >
                   Gemini (Fast)
                 </button>
                 <button
                   onClick={() => { updateState('imageModel', 'gemini-hq'); updateState('outputFormat', 'image'); }}
-                  className={`py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={\`py-2 px-3 text-sm font-medium rounded-lg transition-colors \${
                     state.imageModel === 'gemini-hq'
                       ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                  }\`}
                 >
                   Gemini (HQ)
                 </button>
                 <button
                   onClick={() => { updateState('imageModel', 'veo-fast'); updateState('outputFormat', 'video'); }}
-                  className={`py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={\`py-2 px-3 text-sm font-medium rounded-lg transition-colors \${
                     state.imageModel === 'veo-fast'
                       ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                       : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                  }\`}
                 >
                   Veo (Video)
                 </button>
@@ -166,11 +69,11 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   <button
                     key={mode}
                     onClick={() => updateState('fidelityMode', mode)}
-                    className={`py-1.5 px-3 text-xs font-medium rounded-lg transition-all ${
+                    className={\`py-1.5 px-3 text-xs font-medium rounded-lg transition-all \${
                       state.fidelityMode === mode
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
+                    }\`}
                   >
                     {mode}
                   </button>
@@ -329,31 +232,31 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => updateState('creationType', 'Photo')}
-                className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors ${
+                className={\`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors \${
                   state.creationType === 'Photo'
                     ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                }\`}
               >
                 Photo
               </button>
               <button
                 onClick={() => updateState('creationType', 'Poster')}
-                className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors ${
+                className={\`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors \${
                   state.creationType === 'Poster'
                     ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                }\`}
               >
                 Poster
               </button>
               <button
                 onClick={() => updateState('creationType', 'Catalogue')}
-                className={`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors ${
+                className={\`py-1.5 px-2 text-xs font-medium rounded-lg transition-colors \${
                   state.creationType === 'Catalogue'
                     ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
                     : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+                }\`}
               >
                 Catalogue
               </button>
@@ -857,141 +760,9 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none min-h-[80px] resize-none transition-colors"
           />
         </div>
-      </div>
-<div className="p-6 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 space-y-3 transition-colors shrink-0 mt-auto">
+      </div>\n`;
 
-        <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-gray-600 dark:text-gray-400 font-medium">Generation Cost:</span>
-          <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-            {(() => {
-              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
-              let pageMultiplier = 1;
-              if (state.outputFormat === 'image') {
-                if (state.creationType === 'Poster') {
-                  pageMultiplier = state.posterPages || 1;
-                } else if (state.creationType === 'Catalogue') {
-                  pageMultiplier = state.cataloguePages || 12;
-                }
-              }
-              const modelMultiplier = state.modelCount || 1;
-              const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
-                : (state.quality === 'Low Res (Free)' ? 0 : 
-                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
-                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
-              return `${cost} Credits`;
-            })()}
-          </span>
-        </div>
-        <button
-          onClick={onGenerate}
-          disabled={
-            isGenerating || 
-            (state.mode === 'catalogue' 
-              ? (!state.catalogueModels || state.catalogueModels.every(m => 
-                  !m.outfitImage && !m.dressTopImage && !m.dressBottomImage && !m.dressDupattaImage && !m.sareeImage && !m.blouseImage
-                ))
-              : state.mode === 'saree' 
-                ? (!state.sareeImage && !state.blouseImage) 
-                : (state.garmentType === 'Dress' 
-                    ? (!state.dressTopImage && !state.dressBottomImage && !state.dressDupattaImage) 
-                    : !state.outfitImage)) ||
-            (state.background === 'Uploaded' && !state.backgroundImage) ||
-            (() => {
-              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
-              if (isFreeTier && freeGenerationsUsed >= 3) return true;
-              
-              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
-              let pageMultiplier = 1;
-              if (state.outputFormat === 'image') {
-                if (state.creationType === 'Poster') {
-                  pageMultiplier = state.posterPages || 1;
-                } else if (state.creationType === 'Catalogue') {
-                  pageMultiplier = state.cataloguePages || 12;
-                }
-              }
-              const modelMultiplier = state.modelCount || 1;
-              const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
-                : (state.quality === 'Low Res (Free)' ? 0 : 
-                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
-                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
-              return userCredits < cost;
-            })()
-          }
-          className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2"
-        >
-          {isGenerating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Generating...
-            </>
-          ) : (() => {
-              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
-              if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
-              
-              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
-              let pageMultiplier = 1;
-              if (state.outputFormat === 'image') {
-                if (state.creationType === 'Poster') {
-                  pageMultiplier = state.posterPages || 1;
-                } else if (state.creationType === 'Catalogue') {
-                  pageMultiplier = state.cataloguePages || 12;
-                }
-              }
-              const modelMultiplier = state.modelCount || 1;
-              const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
-                : (state.quality === 'Low Res (Free)' ? 0 : 
-                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
-                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
-              return userCredits < cost ? 'insufficient' : 'ok';
-            })() === 'limit_reached' ? (
-            <>
-              <Wand2 className="w-4 h-4" />
-              Free Limit Reached (Upgrade)
-            </>
-          ) : (() => {
-              const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
-              if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
-              
-              const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
-              let pageMultiplier = 1;
-              if (state.outputFormat === 'image') {
-                if (state.creationType === 'Poster') {
-                  pageMultiplier = state.posterPages || 1;
-                } else if (state.creationType === 'Catalogue') {
-                  pageMultiplier = state.cataloguePages || 12;
-                }
-              }
-              const modelMultiplier = state.modelCount || 1;
-              const baseCost = state.outputFormat === 'video' 
-                ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
-                : (state.quality === 'Low Res (Free)' ? 0 : 
-                   state.quality === 'Standard' || state.quality === 'HD' ? 1 :
-                   state.quality === 'FHD' || state.quality === '2K' ? 2 :
-                   state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
-              return userCredits < cost ? 'insufficient' : 'ok';
-            })() === 'insufficient' ? (
-            <>
-              <Wand2 className="w-4 h-4" />
-              Insufficient Credits
-            </>
-          ) : (
-            <>
-              <Wand2 className="w-4 h-4" />
-              Start Creating
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
+const finalCode = code.substring(0, startIdx) + newScrollContent + code.substring(endIdx);
+
+fs.writeFileSync('src/components/Sidebar.tsx', finalCode);
+console.log('Restored Sidebar successfully.');
