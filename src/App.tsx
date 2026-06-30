@@ -76,6 +76,13 @@ export default function App() {
   const [state, setState] = useState<AppState>({
     apiProvider: 'google',
     mode: 'saree',
+    creationType: 'Photo',
+    modelCount: 1,
+    cataloguePages: 12,
+    posterPages: 1,
+    posterMainPageModels: 6,
+    catalogueModels: [],
+    posterModels: [],
     useProModel: true,
     imageModel: 'gemini-fast',
     sareeImage: null,
@@ -100,6 +107,7 @@ export default function App() {
     aspectRatio: '3:4',
     customWidth: 10,
     customHeight: 10,
+    customDPI: 300,
     enableOutfitColor: false,
     outfitColor: '#ff0000',
     enableJewellery: false,
@@ -228,6 +236,16 @@ export default function App() {
 
     try {
       const videoMultiplier = currentState.outputFormat === 'video' ? (currentState.videoDuration || 1) : 1;
+      let pageMultiplier = 1;
+      if (currentState.outputFormat === 'image') {
+        if (currentState.creationType === 'Poster') {
+          pageMultiplier = currentState.posterPages || 1;
+        } else if (currentState.creationType === 'Catalogue') {
+          pageMultiplier = currentState.cataloguePages || 12;
+        }
+      }
+      
+      const modelMultiplier = currentState.modelCount || 1;
       const baseCost = currentState.outputFormat === 'video' 
         ? (currentState.videoResolution === '4K Ultra Master' ? 3 : currentState.videoResolution === '1080p' ? 2 : 1)
         : (currentState.quality === 'Low Res (Free)' ? 0 : 
@@ -235,7 +253,13 @@ export default function App() {
            currentState.quality === 'FHD' || currentState.quality === '2K' ? 2 :
            currentState.quality === '4K' ? 3 : 
            currentState.quality === 'Ultra' ? 4 : 5);
-      const cost = baseCost * videoMultiplier;
+      const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
+
+      if (cost > 0 && userCredits < cost) {
+        setError(`Insufficient credits. You need ${cost} credits but have ${userCredits}. Please purchase more credits.`);
+        setIsGenerating(false);
+        return;
+      }
            
       const result = await generateFashionMedia(currentState, setProgressMsg);
       setGeneratedImage(result);

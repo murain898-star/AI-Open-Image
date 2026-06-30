@@ -128,7 +128,119 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     baseImageForVideo = { mimeType, data };
     baseImageUrl = resized;
   } else {
-    if (state.mode === 'saree') {
+    if (state.creationType === 'Poster' && state.posterPages === 2) {
+      for (let i = 0; i < (state.posterModels || []).length; i++) {
+        const model = state.posterModels[i];
+        const pageName = i === 0 ? 'Cover Page (Close-up)' : `Main Page Model ${i}`;
+        if (model.garmentType === 'Dress') {
+          if (model.dressTopImage) {
+            const resized = await resizeImageBase64(model.dressTopImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} Top/Kurti design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+          if (model.dressBottomImage) {
+            const resized = await resizeImageBase64(model.dressBottomImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} Bottom/Pants design reference.` });
+          }
+          if (model.dressDupattaImage) {
+            const resized = await resizeImageBase64(model.dressDupattaImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} Dupatta/Scarf design reference.` });
+          }
+        } else if (model.garmentType === 'Saree') {
+          if (model.sareeImage) {
+            const resized = await resizeImageBase64(model.sareeImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} Saree Drape design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+          if (model.blouseImage) {
+            const resized = await resizeImageBase64(model.blouseImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} Blouse design reference.` });
+          }
+        } else {
+          if (model.outfitImage) {
+            const resized = await resizeImageBase64(model.outfitImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `Poster ${pageName} ${model.garmentType !== 'Auto' ? model.garmentType : 'outfit'} design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+        }
+      }
+    } else if (state.mode === 'catalogue') {
+      for (let index = 0; index < (state.catalogueModels || []).length; index++) {
+        const model = state.catalogueModels[index];
+        const total = state.catalogueModels.length;
+        let pageName = '';
+        if (state.creationType === 'Catalogue') {
+          if (index === 0) pageName = 'Page 1 (Cover Page)';
+          else if (index === 1) pageName = 'Page 2 (Inner Page)';
+          else if (index === total - 1) pageName = `Page ${total} (Back Page)`;
+          else if (index === total - 2) pageName = `Page ${total - 1} (Index Double Page)`;
+          else {
+            const offset = index - 2;
+            const garmentNum = Math.floor(offset / 2) + 1;
+            const poseType = offset % 2 === 0 ? 'Single/Double Standing' : 'Close-up Pose';
+            pageName = `Page ${index + 1} (Garment ${garmentNum} ${poseType})`;
+          }
+        } else {
+           pageName = `Model ${model.id}`;
+        }
+        
+        if (model.garmentType === 'Dress') {
+          if (model.dressTopImage) {
+            const resized = await resizeImageBase64(model.dressTopImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} Top/Kurti design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+          if (model.dressBottomImage) {
+            const resized = await resizeImageBase64(model.dressBottomImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} Bottom/Pants design reference.` });
+          }
+          if (model.dressDupattaImage) {
+            const resized = await resizeImageBase64(model.dressDupattaImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} Dupatta/Scarf design reference.` });
+          }
+        } else if (model.garmentType === 'Saree') {
+          if (model.sareeImage) {
+            const resized = await resizeImageBase64(model.sareeImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} Saree Drape design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+          if (model.blouseImage) {
+            const resized = await resizeImageBase64(model.blouseImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} Blouse design reference.` });
+          }
+        } else {
+          if (model.outfitImage) {
+            const resized = await resizeImageBase64(model.outfitImage, maxDim, maxDim);
+            const { mimeType, data } = extractBase64Data(resized);
+            parts.push({ inlineData: { mimeType, data } });
+            parts.push({ text: `${pageName} ${model.garmentType !== 'Auto' ? model.garmentType : 'outfit'} design reference.` });
+            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+          }
+        }
+      }
+    } else if (state.mode === 'saree') {
       if (state.sareeImage) {
         const resized = await resizeImageBase64(state.sareeImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
@@ -203,11 +315,77 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     poseDescription = fancyPoses[Math.floor(Math.random() * fancyPoses.length)];
   }
 
-  let prompt = `Generate a high-quality, professional full-body fashion catalog photo of a ${state.gender.toLowerCase()} model ${poseDescription}. 
+  let baseSubject = `full-body fashion catalog photo of a ${state.gender.toLowerCase()} model`;
+  
+  const layoutVariations = [
+    "creative and unique framing",
+    "dynamic asymmetric composition",
+    "elegant grid-like arrangement",
+    "editorial collage style",
+    "modern overlapping presentation",
+    "classic symmetrical layout",
+    "cinematic wide-angle perspective"
+  ];
+  const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
 
-CRITICAL INSTRUCTION: The model MUST be wearing the EXACT garment(s) shown in the provided reference image(s). 
-You must perfectly copy the embroidery, motifs, pattern, color, and fabric texture from the reference images onto the model's outfit. 
-DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact visual match of the uploaded garment.`;
+  if (state.creationType === 'Poster') {
+    baseSubject = `cinematic, high-end fashion poster featuring a ${state.gender.toLowerCase()} model in a ${randomLayout}`;
+  } else if (state.creationType === 'Catalogue') {
+    baseSubject = `clean, commercial fashion catalogue spread featuring a ${state.gender.toLowerCase()} model with a ${randomLayout}`;
+  } else {
+    baseSubject = `high-quality, professional full-body fashion photo of a ${state.gender.toLowerCase()} model`;
+  }
+
+  let prompt = `Generate a ${baseSubject} ${poseDescription}.`;
+
+  if (state.modelCount > 1) {
+    if (state.creationType === 'Poster') {
+      prompt = `Generate a cinematic, high-end fashion poster featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}. Use a ${randomLayout}.`;
+    } else if (state.creationType === 'Catalogue') {
+      prompt = `Generate a clean, commercial fashion catalogue spread featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}. Use a ${randomLayout}.`;
+    } else {
+      prompt = `Generate a high-quality, professional fashion photo layout featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}.`;
+    }
+  }
+  
+  if (state.creationType === 'Poster') {
+    prompt += `\n\nCOMPOSITION: The layout MUST be completely unique and different for this generation, using a striking visual poster arrangement. Leave elegant negative space for typography and titles. Use dramatic, cinematic lighting, and high editorial fashion aesthetics. You can include inset frames or creative overlapping if it suits the poster style.`;
+    if (state.posterPages === 2) {
+      prompt += `\n\nSPREAD REQUIREMENT: This is a 2-page poster design. Please visually represent this as a two-part composition or a collage: Page 1 (Cover) MUST feature a dramatic close-up or back pose, and Page 2 (Main) features EXACTLY ${state.posterMainPageModels} models in a dynamic layout.`;
+    }
+  } else if (state.creationType === 'Catalogue') {
+    prompt += `\n\nCOMPOSITION: The layout MUST be a unique catalogue spread for this generation. Arrange the models or frames in a dynamic and fresh way. Ensure perfect even lighting, neutral or complementary backgrounds, and absolutely clear focus on the garments' details.`;
+    if (state.cataloguePages && state.cataloguePages > 1) {
+      prompt += `\n\nSPREAD REQUIREMENT: This represents a ${state.cataloguePages}-page extensive catalogue. Please generate a highly composite, multi-frame layout that implies a comprehensive multi-page collection of garments.`;
+    }
+  }
+
+  if (state.quality === 'Print (5792x8688)') {
+    prompt += `\n\nRESOLUTION INSTRUCTION: This must be a hyper-high-resolution 144 Megapixel image suitable for 5792x8688 camera print in a 2:3 poster aspect ratio. Ensure incredible micro-details, ultra-sharp focus, and absolute photorealism.`;
+  } else {
+    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of ultra-high definition, photorealistic quality with extreme sharpness. The facial features, skin texture, and fabric details MUST be flawlessly sharp, matching the quality of a high-end DSLR studio photoshoot. Ensure there is no blur or AI artifacting.`;
+  }
+
+  // Handle print sizes
+  if (state.aspectRatio !== '1:1' && state.aspectRatio !== '3:4' && state.aspectRatio !== '4:3' && state.aspectRatio !== '9:16' && state.aspectRatio !== '16:9') {
+    if (state.aspectRatio === 'Custom') {
+      prompt += `\n\nSIZE INSTRUCTION: Compose the image explicitly for a physical dimension of ${state.customWidth} inches width by ${state.customHeight} inches height at ${state.customDPI} DPI. The aspect ratio of the generated image MUST strictly match ${state.customWidth}:${state.customHeight}. Ensure the subject framing respects this exact proportional boundary.`;
+    } else {
+      const dimensions = state.aspectRatio.split('x');
+      if (dimensions.length === 2) {
+        prompt += `\n\nSIZE INSTRUCTION: Compose the image explicitly for a physical dimension of ${dimensions[0]} inches width by ${dimensions[1]} inches height at 300 DPI. The aspect ratio of the generated image MUST strictly match ${dimensions[0]}:${dimensions[1]}. Ensure the subject framing respects this exact proportional boundary.`;
+      }
+    }
+  }
+
+  prompt += `\n\nCRITICAL INSTRUCTION: The model(s) MUST be wearing the EXACT garment(s) shown in the provided reference image(s). 
+You must perfectly copy the embroidery, motifs, pattern, color, and fabric texture from the reference images onto the model's outfit.`;
+
+  if (state.modelCount > 1) {
+    prompt += `\nPay careful attention to which reference images belong to which model number, as each model in the group has different specific garments assigned to them.`;
+  }
+
+  prompt += `\nDO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact visual match of the uploaded garment(s).`;
 
   if (state.animateReferenceImage) {
     prompt = `ANIMATION MODE: Use the provided image as the exact starting frame. Animate the model in the image naturally.`;
@@ -345,12 +523,41 @@ DO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact vis
     return { url: URL.createObjectURL(blob), type: 'video' };
   } else {
     try {
+      const isPrint = state.quality === 'Print (5792x8688)';
+      
+      let finalAspectRatio = state.aspectRatio;
+      if (isPrint) {
+        finalAspectRatio = '3:4';
+      } else if (state.aspectRatio === 'Custom') {
+        const ratio = state.customWidth / state.customHeight;
+        if (Math.abs(ratio - 1) < 0.1) finalAspectRatio = '1:1';
+        else if (ratio < 0.6) finalAspectRatio = '9:16';
+        else if (ratio < 0.85) finalAspectRatio = '3:4';
+        else if (ratio > 1.6) finalAspectRatio = '16:9';
+        else finalAspectRatio = '4:3';
+      } else if (state.aspectRatio !== '1:1' && state.aspectRatio !== '3:4' && state.aspectRatio !== '4:3' && state.aspectRatio !== '9:16' && state.aspectRatio !== '16:9') {
+        // Handle print sizes like '12x18'
+        const dims = state.aspectRatio.split('x');
+        if (dims.length === 2) {
+          const w = parseFloat(dims[0]);
+          const h = parseFloat(dims[1]);
+          const ratio = w / h;
+          if (Math.abs(ratio - 1) < 0.1) finalAspectRatio = '1:1';
+          else if (ratio < 0.6) finalAspectRatio = '9:16';
+          else if (ratio < 0.85) finalAspectRatio = '3:4';
+          else if (ratio > 1.6) finalAspectRatio = '16:9';
+          else finalAspectRatio = '4:3';
+        } else {
+          finalAspectRatio = '1:1';
+        }
+      }
+
       const imageConfig: any = {
-        aspectRatio: state.aspectRatio === '1:1' || state.aspectRatio === '3:4' || state.aspectRatio === '4:3' || state.aspectRatio === '9:16' || state.aspectRatio === '16:9' ? state.aspectRatio : "1:1"
+        aspectRatio: finalAspectRatio
       };
       
       if (modelName === 'gemini-3.1-flash-image-preview') {
-        imageConfig.imageSize = state.quality === 'Gigapixel' || state.quality === '4K' ? '4K' : state.quality === '2K' ? '2K' : state.quality === 'Low Res (Free)' ? '512px' : '1K';
+        imageConfig.imageSize = (state.quality === 'Gigapixel' || state.quality === '4K' || isPrint) ? '4K' : state.quality === '2K' ? '2K' : state.quality === 'Low Res (Free)' ? '512px' : '1K';
       }
 
       const response = await ai.models.generateContent({

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wand2, Image as ImageIcon, Video, Zap, ChevronRight, Info } from 'lucide-react';
 import { AppState } from '../types';
+import { AdSenseBanner } from './AdSenseBanner';
 
 interface HomeViewProps {
   setCurrentView: (view: string) => void;
@@ -83,6 +84,9 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
           </div>
         </div>
 
+        {/* Advertisement Banner */}
+        <AdSenseBanner adSlot={import.meta.env.VITE_ADSENSE_SLOT_1_ID || "1234567890"} />
+
         {/* AI Gallery Showcase */}
         <div>
           <div className="flex items-center justify-between mb-6">
@@ -160,6 +164,9 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
             </div>
           </div>
         </div>
+
+        {/* Second Advertisement Banner */}
+        <AdSenseBanner adSlot={import.meta.env.VITE_ADSENSE_SLOT_2_ID || "0987654321"} />
 
         {/* Credit Cost Breakdown */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">

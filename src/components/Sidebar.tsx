@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset } from '../types';
+import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset, CreationType } from '../types';
 import { Uploader } from './Uploader';
 import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus } from 'lucide-react';
 import { FidelityMode } from '../types';
@@ -329,49 +329,321 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
         <div className="space-y-4">
           <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
             <ImageIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            Garments
+            Garments & Layout
           </label>
+
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creation Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['Photo', 'Poster', 'Catalogue'] as CreationType[]).map(type => (
+                <button
+                  key={type}
+                  onClick={() => updateState('creationType', type)}
+                  className={`py-2 px-2 text-xs font-medium rounded-lg transition-colors ${
+                    state.creationType === type
+                      ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {state.creationType === 'Poster' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Poster Pages (Charge multiplier)</label>
+                <select
+                  value={state.posterPages}
+                  onChange={e => {
+                    const pages = parseInt(e.target.value) as any;
+                    updateState('posterPages', pages);
+                    const totalModels = pages === 1 ? 1 : 1 + state.posterMainPageModels;
+                    const currentModels = state.posterModels || [];
+                    const newModels = [...currentModels];
+                    for (let i = currentModels.length; i < totalModels; i++) {
+                      newModels.push({
+                        id: i + 1,
+                        outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
+                      });
+                    }
+                    updateState('posterModels', newModels.slice(0, totalModels));
+                  }}
+                  className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                >
+                  <option value={1}>1 Page</option>
+                  <option value={2}>2 Pages (Cover + Main)</option>
+                </select>
+              </div>
+              
+              {state.posterPages === 2 && (
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Number of Models on Main Page</label>
+                  <select
+                    value={state.posterMainPageModels}
+                    onChange={e => {
+                      const modelCount = parseInt(e.target.value);
+                      updateState('posterMainPageModels', modelCount);
+                      const totalModels = 1 + modelCount;
+                      const currentModels = state.posterModels || [];
+                      const newModels = [...currentModels];
+                      for (let i = currentModels.length; i < totalModels; i++) {
+                        newModels.push({
+                          id: i + 1,
+                          outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
+                        });
+                      }
+                      updateState('posterModels', newModels.slice(0, totalModels));
+                    }}
+                    className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                  >
+                    {[6, 8, 10, 12].map(num => (
+                      <option key={num} value={num}>{num} Models</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {state.creationType === 'Catalogue' && (
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Catalogue Pages (Charge multiplier)</label>
+              <select
+                value={state.cataloguePages}
+                onChange={e => {
+                  const pages = parseInt(e.target.value) as any;
+                  updateState('cataloguePages', pages);
+                  const currentModels = state.catalogueModels || [];
+                  const newModels = [...currentModels];
+                  for (let i = currentModels.length; i < pages; i++) {
+                    newModels.push({
+                      id: i + 1,
+                      outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
+                    });
+                  }
+                  updateState('catalogueModels', newModels.slice(0, pages));
+                }}
+                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+              >
+                {[12, 18, 20, 22, 24, 26, 28, 30, 32].map(num => (
+                  <option key={num} value={num}>{num} Pages</option>
+                ))}
+              </select>
+            </div>
+          )}
           
           <div>
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model Count</label>
             <select
-              value={state.garmentType}
+              value={state.modelCount}
               onChange={e => {
-                const val = e.target.value as any;
-                updateState('garmentType', val);
-                updateState('mode', val === 'Saree' ? 'saree' : 'outfit');
+                const count = parseInt(e.target.value) as any;
+                updateState('modelCount', count);
+                if (count > 1) {
+                  updateState('mode', 'catalogue');
+                } else {
+                  updateState('mode', state.garmentType === 'Saree' ? 'saree' : 'outfit');
+                }
               }}
               className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
             >
-              <option value="Auto">Auto-detect</option>
-              <option value="Saree">Saree</option>
-              <option value="Kurti">Kurti</option>
-              <option value="Dress">Dress</option>
-              <option value="Top">Top</option>
-              <option value="Pants">Pants</option>
-              <option value="Suit">Suit</option>
-              <option value="Gown">Gown</option>
-              <option value="Lehenga">Lehenga</option>
-              <option value="Shirt">Shirt</option>
-              <option value="T-shirt">T-shirt</option>
-              <option value="Jacket">Jacket</option>
-              <option value="Skirt">Skirt</option>
+              <option value={1}>Single Model</option>
+              <option value={2}>Couple (2 Models)</option>
+              <option value={6}>Group (6 Models)</option>
+              <option value={8}>Group (8 Models)</option>
+              <option value={10}>Group (10 Models)</option>
+              <option value={12}>Group (12 Models)</option>
             </select>
           </div>
 
-          {state.mode === 'saree' ? (
-            <>
-              <Uploader label="Upload Saree Drape" image={state.sareeImage} onChange={img => updateState('sareeImage', img)} libraryType="saree" />
-              <Uploader label="Upload Blouse" image={state.blouseImage} onChange={img => updateState('blouseImage', img)} libraryType="blouse" />
-            </>
-          ) : state.garmentType === 'Dress' ? (
-            <>
-              <Uploader label="Upload Top" image={state.dressTopImage} onChange={img => updateState('dressTopImage', img)} libraryType="outfit" />
-              <Uploader label="Upload Bottom" image={state.dressBottomImage} onChange={img => updateState('dressBottomImage', img)} libraryType="outfit" />
-              <Uploader label="Upload Dupatta" image={state.dressDupattaImage} onChange={img => updateState('dressDupattaImage', img)} libraryType="outfit" />
-            </>
+          {state.creationType === 'Catalogue' ? (
+            <div className="space-y-6">
+              {state.catalogueModels.map((model, index) => {
+                let pageName = '';
+                const total = state.catalogueModels.length;
+                if (index === 0) pageName = 'Page 1: Cover Page';
+                else if (index === 1) pageName = 'Page 2: Inner Page';
+                else if (index === total - 1) pageName = `Page ${total}: Back Page`;
+                else if (index === total - 2) pageName = `Page ${total - 1}: Index (Double Page)`;
+                else {
+                  const offset = index - 2;
+                  const garmentNum = Math.floor(offset / 2) + 1;
+                  const poseType = offset % 2 === 0 ? 'Single/Double Standing' : 'Close-up Pose';
+                  pageName = `Page ${index + 1}: Garment ${garmentNum} (${poseType})`;
+                }
+
+                return (
+                  <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                    <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
+                      <select
+                        value={model.garmentType}
+                        onChange={e => {
+                          const newModels = [...state.catalogueModels];
+                          newModels[index].garmentType = e.target.value as any;
+                          updateState('catalogueModels', newModels);
+                        }}
+                        className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                      >
+                        <option value="Auto">Auto-detect</option>
+                        <option value="Dress">Dress (Top/Bottom/Dupatta)</option>
+                        <option value="Saree">Saree</option>
+                        <option value="Kurti">Kurti</option>
+                        <option value="Suit">Suit</option>
+                      </select>
+                    </div>
+                    
+                    {model.garmentType === 'Dress' ? (
+                      <>
+                        <Uploader label="Upload Top" image={model.dressTopImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressTopImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                        <Uploader label="Upload Bottom" image={model.dressBottomImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressBottomImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                        <Uploader label="Upload Dupatta" image={model.dressDupattaImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressDupattaImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                      </>
+                    ) : model.garmentType === 'Saree' ? (
+                      <>
+                        <Uploader label="Upload Saree Drape" image={model.sareeImage} onChange={img => { const m = [...state.catalogueModels]; m[index].sareeImage = img; updateState('catalogueModels', m); }} libraryType="saree" />
+                        <Uploader label="Upload Blouse" image={model.blouseImage} onChange={img => { const m = [...state.catalogueModels]; m[index].blouseImage = img; updateState('catalogueModels', m); }} libraryType="blouse" />
+                      </>
+                    ) : (
+                      <Uploader label={`Upload ${model.garmentType === 'Auto' ? 'Outfit' : model.garmentType}`} image={model.outfitImage} onChange={img => { const m = [...state.catalogueModels]; m[index].outfitImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : state.creationType === 'Poster' && state.posterPages === 2 ? (
+            <div className="space-y-6">
+              {state.posterModels.map((model, index) => {
+                const pageName = index === 0 ? 'Cover Page (Close-up Pose)' : `Main Page Model ${index}`;
+                return (
+                  <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                    <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                    <div>
+                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
+                      <select
+                        value={model.garmentType}
+                        onChange={e => {
+                          const newModels = [...state.posterModels];
+                          newModels[index].garmentType = e.target.value as any;
+                          updateState('posterModels', newModels);
+                        }}
+                        className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                      >
+                        <option value="Auto">Auto-detect</option>
+                        <option value="Dress">Dress (Top/Bottom/Dupatta)</option>
+                        <option value="Saree">Saree</option>
+                        <option value="Kurti">Kurti</option>
+                        <option value="Suit">Suit</option>
+                      </select>
+                    </div>
+                    
+                    {model.garmentType === 'Dress' ? (
+                      <>
+                        <Uploader label="Upload Top" image={model.dressTopImage} onChange={img => { const m = [...state.posterModels]; m[index].dressTopImage = img; updateState('posterModels', m); }} libraryType="outfit" />
+                        <Uploader label="Upload Bottom" image={model.dressBottomImage} onChange={img => { const m = [...state.posterModels]; m[index].dressBottomImage = img; updateState('posterModels', m); }} libraryType="outfit" />
+                        <Uploader label="Upload Dupatta" image={model.dressDupattaImage} onChange={img => { const m = [...state.posterModels]; m[index].dressDupattaImage = img; updateState('posterModels', m); }} libraryType="outfit" />
+                      </>
+                    ) : model.garmentType === 'Saree' ? (
+                      <>
+                        <Uploader label="Upload Saree Drape" image={model.sareeImage} onChange={img => { const m = [...state.posterModels]; m[index].sareeImage = img; updateState('posterModels', m); }} libraryType="saree" />
+                        <Uploader label="Upload Blouse" image={model.blouseImage} onChange={img => { const m = [...state.posterModels]; m[index].blouseImage = img; updateState('posterModels', m); }} libraryType="blouse" />
+                      </>
+                    ) : (
+                      <Uploader label={`Upload ${model.garmentType === 'Auto' ? 'Outfit' : model.garmentType}`} image={model.outfitImage} onChange={img => { const m = [...state.posterModels]; m[index].outfitImage = img; updateState('posterModels', m); }} libraryType="outfit" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : state.modelCount > 1 && state.creationType !== 'Poster' ? (
+            <div className="space-y-6">
+              {state.catalogueModels.map((model, index) => (
+                <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                  <h4 className="font-medium text-sm text-gray-900 dark:text-white">Model {model.id} Garments</h4>
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
+                    <select
+                      value={model.garmentType}
+                      onChange={e => {
+                        const newModels = [...state.catalogueModels];
+                        newModels[index].garmentType = e.target.value as any;
+                        updateState('catalogueModels', newModels);
+                      }}
+                      className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                    >
+                      <option value="Auto">Auto-detect</option>
+                      <option value="Dress">Dress (Top/Bottom/Dupatta)</option>
+                      <option value="Saree">Saree</option>
+                      <option value="Kurti">Kurti</option>
+                      <option value="Suit">Suit</option>
+                    </select>
+                  </div>
+                  
+                  {model.garmentType === 'Dress' ? (
+                    <>
+                      <Uploader label="Upload Top" image={model.dressTopImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressTopImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                      <Uploader label="Upload Bottom" image={model.dressBottomImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressBottomImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                      <Uploader label="Upload Dupatta" image={model.dressDupattaImage} onChange={img => { const m = [...state.catalogueModels]; m[index].dressDupattaImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                    </>
+                  ) : model.garmentType === 'Saree' ? (
+                    <>
+                      <Uploader label="Upload Saree Drape" image={model.sareeImage} onChange={img => { const m = [...state.catalogueModels]; m[index].sareeImage = img; updateState('catalogueModels', m); }} libraryType="saree" />
+                      <Uploader label="Upload Blouse" image={model.blouseImage} onChange={img => { const m = [...state.catalogueModels]; m[index].blouseImage = img; updateState('catalogueModels', m); }} libraryType="blouse" />
+                    </>
+                  ) : (
+                    <Uploader label={`Upload ${model.garmentType === 'Auto' ? 'Outfit' : model.garmentType}`} image={model.outfitImage} onChange={img => { const m = [...state.catalogueModels]; m[index].outfitImage = img; updateState('catalogueModels', m); }} libraryType="outfit" />
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
-            <Uploader label="Upload Outfit Image" image={state.outfitImage} onChange={img => updateState('outfitImage', img)} libraryType="outfit" />
+            <>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
+                <select
+                  value={state.garmentType}
+                  onChange={e => {
+                    const val = e.target.value as any;
+                    updateState('garmentType', val);
+                    updateState('mode', val === 'Saree' ? 'saree' : 'outfit');
+                  }}
+                  className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                >
+                  <option value="Auto">Auto-detect</option>
+                  <option value="Saree">Saree</option>
+                  <option value="Kurti">Kurti</option>
+                  <option value="Dress">Dress</option>
+                  <option value="Top">Top</option>
+                  <option value="Pants">Pants</option>
+                  <option value="Suit">Suit</option>
+                  <option value="Gown">Gown</option>
+                  <option value="Lehenga">Lehenga</option>
+                  <option value="Shirt">Shirt</option>
+                  <option value="T-shirt">T-shirt</option>
+                  <option value="Jacket">Jacket</option>
+                  <option value="Skirt">Skirt</option>
+                </select>
+              </div>
+
+              {state.mode === 'saree' ? (
+                <>
+                  <Uploader label="Upload Saree Drape" image={state.sareeImage} onChange={img => updateState('sareeImage', img)} libraryType="saree" />
+                  <Uploader label="Upload Blouse" image={state.blouseImage} onChange={img => updateState('blouseImage', img)} libraryType="blouse" />
+                </>
+              ) : state.garmentType === 'Dress' ? (
+                <>
+                  <Uploader label="Upload Top" image={state.dressTopImage} onChange={img => updateState('dressTopImage', img)} libraryType="outfit" />
+                  <Uploader label="Upload Bottom" image={state.dressBottomImage} onChange={img => updateState('dressBottomImage', img)} libraryType="outfit" />
+                  <Uploader label="Upload Dupatta" image={state.dressDupattaImage} onChange={img => updateState('dressDupattaImage', img)} libraryType="outfit" />
+                </>
+              ) : (
+                <Uploader label="Upload Outfit Image" image={state.outfitImage} onChange={img => updateState('outfitImage', img)} libraryType="outfit" />
+              )}
+            </>
           )}
         </div>
 
@@ -517,6 +789,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                     <>
                       <option value="Low Res (Free)">Low Res (512x512)</option>
                       <option value="Standard">Standard (1024x1024)</option>
+                      <option value="Print (5792x8688)">Print (5792x8688)</option>
                     </>
                   )}
                   {state.apiProvider === 'google' && state.imageModel === 'gemini-hq' && (
@@ -525,6 +798,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                       <option value="2K">High (2K)</option>
                       <option value="4K">Ultra (4K)</option>
                       <option value="Gigapixel">Gigapixel Mode (Max)</option>
+                      <option value="Print (5792x8688)">Print (5792x8688)</option>
                     </>
                   )}
                 </select>
@@ -625,7 +899,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   <input
                     type="number"
                     min="1"
-                    max="40"
+                    max="100"
                     step="0.1"
                     value={state.customWidth}
                     onChange={e => updateState('customWidth', parseFloat(e.target.value) || 10)}
@@ -637,10 +911,22 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   <input
                     type="number"
                     min="1"
-                    max="40"
+                    max="100"
                     step="0.1"
                     value={state.customHeight}
                     onChange={e => updateState('customHeight', parseFloat(e.target.value) || 10)}
+                    className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">DPI</label>
+                  <input
+                    type="number"
+                    min="72"
+                    max="1200"
+                    step="1"
+                    value={state.customDPI}
+                    onChange={e => updateState('customDPI', parseInt(e.target.value) || 300)}
                     className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                   />
                 </div>
@@ -819,13 +1105,22 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           <span className="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
             {(() => {
               const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+              let pageMultiplier = 1;
+              if (state.outputFormat === 'image') {
+                if (state.creationType === 'Poster') {
+                  pageMultiplier = state.posterPages || 1;
+                } else if (state.creationType === 'Catalogue') {
+                  pageMultiplier = state.cataloguePages || 12;
+                }
+              }
+              const modelMultiplier = state.modelCount || 1;
               const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier;
+              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
               return `${cost} Credits`;
             })()}
           </span>
@@ -834,24 +1129,37 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           onClick={onGenerate}
           disabled={
             isGenerating || 
-            (state.mode === 'saree' 
-              ? (!state.sareeImage && !state.blouseImage) 
-              : (state.garmentType === 'Dress' 
-                  ? (!state.dressTopImage && !state.dressBottomImage && !state.dressDupattaImage) 
-                  : !state.outfitImage)) ||
+            (state.mode === 'catalogue' 
+              ? (!state.catalogueModels || state.catalogueModels.every(m => 
+                  !m.outfitImage && !m.dressTopImage && !m.dressBottomImage && !m.dressDupattaImage && !m.sareeImage && !m.blouseImage
+                ))
+              : state.mode === 'saree' 
+                ? (!state.sareeImage && !state.blouseImage) 
+                : (state.garmentType === 'Dress' 
+                    ? (!state.dressTopImage && !state.dressBottomImage && !state.dressDupattaImage) 
+                    : !state.outfitImage)) ||
             (state.background === 'Uploaded' && !state.backgroundImage) ||
             (() => {
               const isFreeTier = state.outputFormat === 'image' && state.quality === 'Low Res (Free)';
               if (isFreeTier && freeGenerationsUsed >= 3) return true;
               
               const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+              let pageMultiplier = 1;
+              if (state.outputFormat === 'image') {
+                if (state.creationType === 'Poster') {
+                  pageMultiplier = state.posterPages || 1;
+                } else if (state.creationType === 'Catalogue') {
+                  pageMultiplier = state.cataloguePages || 12;
+                }
+              }
+              const modelMultiplier = state.modelCount || 1;
               const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier;
+              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
               return userCredits < cost;
             })()
           }
@@ -867,13 +1175,22 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
               
               const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+              let pageMultiplier = 1;
+              if (state.outputFormat === 'image') {
+                if (state.creationType === 'Poster') {
+                  pageMultiplier = state.posterPages || 1;
+                } else if (state.creationType === 'Catalogue') {
+                  pageMultiplier = state.cataloguePages || 12;
+                }
+              }
+              const modelMultiplier = state.modelCount || 1;
               const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier;
+              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
               return userCredits < cost ? 'insufficient' : 'ok';
             })() === 'limit_reached' ? (
             <>
@@ -885,13 +1202,22 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               if (isFreeTier && freeGenerationsUsed >= 3) return 'limit_reached';
               
               const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+              let pageMultiplier = 1;
+              if (state.outputFormat === 'image') {
+                if (state.creationType === 'Poster') {
+                  pageMultiplier = state.posterPages || 1;
+                } else if (state.creationType === 'Catalogue') {
+                  pageMultiplier = state.cataloguePages || 12;
+                }
+              }
+              const modelMultiplier = state.modelCount || 1;
               const baseCost = state.outputFormat === 'video' 
                 ? (state.videoResolution === '4K Ultra Master' ? 3 : state.videoResolution === '1080p' ? 2 : 1)
                 : (state.quality === 'Low Res (Free)' ? 0 : 
                    state.quality === 'Standard' || state.quality === 'HD' ? 1 :
                    state.quality === 'FHD' || state.quality === '2K' ? 2 :
                    state.quality === '4K' || state.quality === 'Ultra' ? 3 : 4);
-              const cost = baseCost * videoMultiplier;
+              const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
               return userCredits < cost ? 'insufficient' : 'ok';
             })() === 'insufficient' ? (
             <>

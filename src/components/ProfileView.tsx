@@ -24,10 +24,16 @@ export function ProfileView({ state, setState }: ProfileViewProps) {
 
   const handleSave = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setIsEditing(false);
-      setLoading(false);
-    }, 500);
+    if (auth.currentUser) {
+      try {
+        const { updateProfile } = await import('firebase/auth');
+        await updateProfile(auth.currentUser, { displayName: name });
+      } catch (error) {
+        console.error("Error updating profile:", error);
+      }
+    }
+    setIsEditing(false);
+    setLoading(false);
   };
 
   const handleSignOut = async () => {
