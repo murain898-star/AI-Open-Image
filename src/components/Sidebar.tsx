@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppState, AppMode, Gender, Pose, StyleExtra, BackgroundType, ImageQuality, AspectRatio, Preset, CreationType } from '../types';
 import { Uploader } from './Uploader';
-import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus } from 'lucide-react';
+import { Sliders, Palette, Layout, Wand2, Image as ImageIcon, Bookmark, Save, Trash2, Sparkles, Gem, ShieldCheck, Ruler, Scissors, Plus, Tag } from 'lucide-react';
 import { FidelityMode } from '../types';
 
 interface SidebarProps {
@@ -58,6 +58,26 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
     setState(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleMultiModelUpdate = (index: number, key: string, value: string | null) => {
+    setState(prev => {
+      const newModels = [...prev.catalogueModels];
+      if (!newModels[index]) {
+        newModels[index] = {
+          id: index,
+          garmentType: prev.garmentType,
+          outfitImage: null,
+          dressTopImage: null,
+          dressBottomImage: null,
+          dressDupattaImage: null,
+          sareeImage: null,
+          blouseImage: null
+        };
+      }
+      (newModels[index] as any)[key] = value;
+      return { ...prev, catalogueModels: newModels };
+    });
+  };
+
 
 
   return (
@@ -106,7 +126,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
         )}
       </div>
 
-      <div className="p-6 flex-1 space-y-8 overflow-y-auto">
+      <div className="p-6 flex-1 space-y-8 overflow-y-auto min-h-0">
         {/* 1. Image Model */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -324,6 +344,32 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             Garments & Layout
           </label>
           
+          {((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') && (
+            <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100">Cover Page</label>
+              {state.mode === 'saree' || state.garmentType === 'Saree' ? (
+                <>
+                  <Uploader label="Upload Cover Saree Drape" image={state.coverSareeImage} onChange={img => updateState('coverSareeImage', img)} libraryType="saree" />
+                  <Uploader label="Upload Cover Blouse" image={state.coverBlouseImage} onChange={img => updateState('coverBlouseImage', img)} libraryType="blouse" />
+                </>
+              ) : state.garmentType === 'Dress' ? (
+                <>
+                  <Uploader label="Upload Cover Dress Top" image={state.coverDressTopImage} onChange={img => updateState('coverDressTopImage', img)} libraryType="outfit" />
+                  <Uploader label="Upload Cover Dress Bottom" image={state.coverDressBottomImage} onChange={img => updateState('coverDressBottomImage', img)} libraryType="outfit" />
+                  <Uploader label="Upload Cover Dupatta" image={state.coverDressDupattaImage} onChange={img => updateState('coverDressDupattaImage', img)} libraryType="outfit" />
+                </>
+              ) : (
+                <Uploader 
+                  label="Upload Cover Page Closeup" 
+                  image={state.coverCloseupImage} 
+                  onChange={img => updateState('coverCloseupImage', img)} 
+                  libraryType="outfit"
+                />
+              )}
+              <p className="text-[10px] text-gray-500 dark:text-gray-400">Back design will be generated automatically.</p>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Creation Type</label>
             <div className="grid grid-cols-3 gap-2">
@@ -360,19 +406,33 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model Count</label>
             <select
-              value={state.modelCount}
-              onChange={e => updateState('modelCount', e.target.value as any)}
+              value={[1, 2, 6, 8, 10, 12].includes(state.modelCount) ? state.modelCount : 0}
+              onChange={e => updateState('modelCount', parseInt(e.target.value) || 0)}
               className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
             >
-              <option value="Single Model">Single Model</option>
-              <option value="2 Models">2 Models</option>
-              <option value="3 Models">3 Models</option>
-              <option value="4 Models">4 Models</option>
-              <option value="Group (5+)">Group (5+)</option>
+              <option value={1}>Single Model</option>
+              <option value={2}>2 Models</option>
+              <option value={6}>6 Models</option>
+              <option value={8}>8 Models</option>
+              <option value={10}>10 Models</option>
+              <option value={12}>12 Models</option>
+              <option value={0}>Custom</option>
             </select>
+            
+            {![1, 2, 6, 8, 10, 12].includes(state.modelCount) && (
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={state.modelCount || ''}
+                onChange={e => updateState('modelCount', parseInt(e.target.value) || 0)}
+                placeholder="Enter number of models"
+                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors mt-2"
+              />
+            )}
           </div>
 
           {state.creationType === 'Catalogue' && (
@@ -384,9 +444,16 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
               >
                 <option value={12}>12 Pages</option>
+                <option value={14}>14 Pages</option>
+                <option value={16}>16 Pages</option>
+                <option value={18}>18 Pages</option>
+                <option value={20}>20 Pages</option>
+                <option value={22}>22 Pages</option>
                 <option value={24}>24 Pages</option>
-                <option value={48}>48 Pages</option>
-                <option value={100}>100 Pages</option>
+                <option value={26}>26 Pages</option>
+                <option value={28}>28 Pages</option>
+                <option value={30}>30 Pages</option>
+                <option value={32}>32 Pages</option>
               </select>
             </div>
           )}
@@ -401,8 +468,6 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               >
                 <option value={1}>1 Page (Standard)</option>
                 <option value={2}>2 Pages (Tall)</option>
-                <option value={3}>3 Pages (Long)</option>
-                <option value={5}>5 Pages (Extra Long)</option>
               </select>
             </div>
           )}
@@ -433,10 +498,19 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <option value="Activewear">Activewear</option>
               <option value="Swimwear">Swimwear</option>
               <option value="Lingerie">Lingerie</option>
+              <option value="Man's Kurta">Man's Kurta</option>
+              <option value="Men's Dress">Men's Dress</option>
+              <option value="Women's Dress">Women's Dress</option>
+              <option value="Stole">Stole</option>
+              <option value="Men's Innerwear">Men's Innerwear</option>
+              <option value="Women's Innerwear">Women's Innerwear</option>
+              <option value="Men's Bottomwear">Men's Bottomwear</option>
+              <option value="Women's Bottomwear">Women's Bottomwear</option>
+              <option value="Jewelry">Jewelry</option>
             </select>
           </div>
 
-          {state.mode !== 'catalogue' && (
+          {state.modelCount === 1 ? (
             <>
               {state.mode === 'saree' || state.garmentType === 'Saree' ? (
                 <>
@@ -453,6 +527,33 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 <Uploader label="Upload Outfit Image" image={state.outfitImage} onChange={img => updateState('outfitImage', img)} libraryType="outfit" />
               )}
             </>
+          ) : (
+            <div className="space-y-6 mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Model Garments ({state.modelCount} Models)</label>
+              {Array.from({ length: state.modelCount }).map((_, index) => {
+                const model = state.catalogueModels[index] || {};
+                
+                return (
+                  <div key={index} className="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Model {index + 1}</p>
+                    {state.mode === 'saree' || state.garmentType === 'Saree' ? (
+                      <>
+                        <Uploader label={`Model ${index + 1} Saree Drape`} image={model.sareeImage || null} onChange={img => handleMultiModelUpdate(index, 'sareeImage', img)} libraryType="saree" />
+                        <Uploader label={`Model ${index + 1} Blouse`} image={model.blouseImage || null} onChange={img => handleMultiModelUpdate(index, 'blouseImage', img)} libraryType="blouse" />
+                      </>
+                    ) : state.garmentType === 'Dress' ? (
+                      <>
+                        <Uploader label={`Model ${index + 1} Dress Top`} image={model.dressTopImage || null} onChange={img => handleMultiModelUpdate(index, 'dressTopImage', img)} libraryType="outfit" />
+                        <Uploader label={`Model ${index + 1} Dress Bottom`} image={model.dressBottomImage || null} onChange={img => handleMultiModelUpdate(index, 'dressBottomImage', img)} libraryType="outfit" />
+                        <Uploader label={`Model ${index + 1} Dupatta`} image={model.dressDupattaImage || null} onChange={img => handleMultiModelUpdate(index, 'dressDupattaImage', img)} libraryType="outfit" />
+                      </>
+                    ) : (
+                      <Uploader label={`Model ${index + 1} Outfit Image`} image={model.outfitImage || null} onChange={img => handleMultiModelUpdate(index, 'outfitImage', img)} libraryType="outfit" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -489,6 +590,16 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <option value="Dynamic">Dynamic</option>
               <option value="Fancy Pose">Fancy Pose</option>
             </select>
+          </div>
+
+          <div className="pt-2">
+            <Uploader 
+              label="Model Face/Body Reference (Optional)" 
+              image={state.modelReferenceImage} 
+              onChange={img => updateState('modelReferenceImage', img)} 
+              libraryType="outfit"
+            />
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 leading-tight">Upload a reference image to keep the model's appearance consistent across generations.</p>
           </div>
         </div>
 
@@ -648,22 +759,45 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               </div>
 
               {state.aspectRatio === 'Custom' && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Width (px)</label>
-                    <input
-                      type="number"
-                      value={state.customWidth}
-                      onChange={e => updateState('customWidth', parseInt(e.target.value) || 1024)}
-                      className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                    />
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Unit</label>
+                      <select
+                        value={state.customUnit || 'inches'}
+                        onChange={e => updateState('customUnit', e.target.value as any)}
+                        className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      >
+                        <option value="pixels">pixels</option>
+                        <option value="inches">inches</option>
+                        <option value="cm">cm</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Width</label>
+                      <input
+                        type="number"
+                        value={state.customWidth}
+                        onChange={e => updateState('customWidth', parseInt(e.target.value) || (state.customUnit === 'pixels' ? 1024 : 10))}
+                        className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Height</label>
+                      <input
+                        type="number"
+                        value={state.customHeight}
+                        onChange={e => updateState('customHeight', parseInt(e.target.value) || (state.customUnit === 'pixels' ? 1024 : 10))}
+                        className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Height (px)</label>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Resolution (DPI)</label>
                     <input
                       type="number"
-                      value={state.customHeight}
-                      onChange={e => updateState('customHeight', parseInt(e.target.value) || 1024)}
+                      value={state.customDPI || 300}
+                      onChange={e => updateState('customDPI', parseInt(e.target.value) || 300)}
                       className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                     />
                   </div>
@@ -830,7 +964,63 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           )}
         </div>
 
-        {/* 11. Custom Prompt */}
+        {/* 11. Branding Details */}
+        <div className="space-y-4">
+          <label className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+            <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            Branding Details
+          </label>
+          
+          <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+            <Uploader 
+              label="Brand Logo (Optional)" 
+              image={state.brandLogo} 
+              onChange={img => updateState('brandLogo', img)} 
+            />
+            
+            {state.brandLogo && (
+              <div className="flex items-start gap-3">
+                <label className="relative inline-flex items-center cursor-pointer mt-1">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={state.brandWatermark} 
+                    onChange={e => updateState('brandWatermark', e.target.checked)} 
+                  />
+                  <div className="w-8 h-4 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+                <div className="flex-1">
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Add brand logo as center watermark</label>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Places a faint brand logo in the center of the image</p>
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Brand Name (Optional)</label>
+              <input
+                type="text"
+                value={state.brandName}
+                onChange={e => updateState('brandName', e.target.value)}
+                placeholder="e.g. Royal Silks"
+                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Design Number (Optional)</label>
+              <input
+                type="text"
+                value={state.designNumber}
+                onChange={e => updateState('designNumber', e.target.value)}
+                placeholder="e.g. RS-2024-001"
+                className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 12. Custom Prompt */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">

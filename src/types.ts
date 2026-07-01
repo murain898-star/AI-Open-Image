@@ -11,9 +11,9 @@ export type OutputFormat = 'image' | 'video';
 export type VideoDuration = number;
 export type ApiProvider = 'google';
 export type ImageModel = 'gemini-fast' | 'gemini-hq' | 'veo-fast';
-export type GarmentType = 'Auto' | 'Saree' | 'Kurti' | 'Dress' | 'Top' | 'Pants' | 'Suit' | 'Gown' | 'Lehenga' | 'Shirt' | 'T-shirt' | 'Jacket' | 'Skirt';
+export type GarmentType = 'Auto' | 'Saree' | 'Kurti' | 'Dress' | 'Top' | 'Pants' | 'Suit' | 'Gown' | 'Lehenga' | 'Shirt' | 'T-shirt' | 'Jacket' | 'Skirt' | 'T-Shirt' | 'Sweater' | 'Activewear' | 'Swimwear' | 'Lingerie' | "Man's Kurta" | "Men's Dress" | "Women's Dress" | 'Stole' | "Men's Innerwear" | "Women's Innerwear" | "Men's Bottomwear" | "Women's Bottomwear" | 'Jewelry';
 export type CreationType = 'Photo' | 'Poster' | 'Catalogue';
-export type ModelCount = 1 | 2 | 6 | 8 | 10 | 12;
+export type ModelCount = number;
 
 declare global {
   interface Window {
@@ -41,7 +41,7 @@ export interface CatalogueModelGarments {
   garmentType: GarmentType;
 }
 
-export type CataloguePages = 12 | 18 | 20 | 22 | 24 | 26 | 28 | 30 | 32;
+export type CataloguePages = 12 | 14 | 16 | 18 | 20 | 22 | 24 | 26 | 28 | 30 | 32;
 export type PosterPages = 1 | 2;
 
 export interface AppState {
@@ -54,6 +54,13 @@ export interface AppState {
   posterMainPageModels: number;
   catalogueModels: CatalogueModelGarments[];
   posterModels: CatalogueModelGarments[];
+  coverCloseupImage: string | null;
+  coverSareeImage: string | null;
+  coverBlouseImage: string | null;
+  coverDressTopImage: string | null;
+  coverDressBottomImage: string | null;
+  coverDressDupattaImage: string | null;
+  modelReferenceImage: string | null;
 
   useProModel: boolean;
   imageModel: ImageModel;
@@ -79,6 +86,7 @@ export interface AppState {
   aspectRatio: AspectRatio;
   customWidth: number;
   customHeight: number;
+  customUnit: 'inches' | 'cm' | 'pixels';
   customDPI: number;
   enableOutfitColor: boolean;
   outfitColor: string;
@@ -86,6 +94,13 @@ export interface AppState {
   jewelleryImage: string | null;
   jewelleryDescription: string;
   colorModifications: ColorModification[];
+  
+  // Branding Details
+  brandLogo: string | null;
+  brandWatermark: boolean;
+  brandName: string;
+  designNumber: string;
+
   // Advanced Controls
   fidelityMode: FidelityMode;
   structureReference: boolean;

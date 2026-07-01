@@ -83,6 +83,13 @@ export default function App() {
     posterMainPageModels: 6,
     catalogueModels: [],
     posterModels: [],
+    coverCloseupImage: null,
+    coverSareeImage: null,
+    coverBlouseImage: null,
+    coverDressTopImage: null,
+    coverDressBottomImage: null,
+    coverDressDupattaImage: null,
+    modelReferenceImage: null,
     useProModel: true,
     imageModel: 'gemini-fast',
     sareeImage: null,
@@ -107,6 +114,7 @@ export default function App() {
     aspectRatio: '3:4',
     customWidth: 10,
     customHeight: 10,
+    customUnit: 'inches',
     customDPI: 300,
     enableOutfitColor: false,
     outfitColor: '#ff0000',
@@ -114,6 +122,10 @@ export default function App() {
     jewelleryImage: null,
     jewelleryDescription: '',
     colorModifications: [],
+    brandLogo: null,
+    brandWatermark: false,
+    brandName: '',
+    designNumber: '',
     fidelityMode: 'Ultra (Strict Design Matching)',
     structureReference: true,
     denoisingStrength: 0.1,
@@ -333,7 +345,7 @@ export default function App() {
   const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans transition-colors">
+    <div className="flex h-[100dvh] fixed inset-0 w-full bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans transition-colors">
       <NavigationRail currentView={currentView} setCurrentView={setCurrentView} />
       
       {currentView === 'home' && <HomeView setCurrentView={setCurrentView} setState={setState} />}
@@ -371,7 +383,7 @@ export default function App() {
             userCredits={effectiveCredits}
             freeGenerationsUsed={user?.email === 'mura.in898@gmail.com' ? 0 : freeGenerationsUsed}
           />
-          <div className="flex-1 flex flex-col relative">
+          <div className="flex-1 flex flex-col relative min-h-0">
             {error && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl shadow-lg border border-red-100 dark:border-red-800/50 flex items-center gap-2 transition-colors">
                 <span className="font-medium text-sm">{error}</span>
