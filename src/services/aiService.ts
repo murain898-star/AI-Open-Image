@@ -419,6 +419,16 @@ You must perfectly copy the embroidery, motifs, pattern, color, and fabric textu
 
   prompt += `\nDO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact visual match of the uploaded garment(s).`;
 
+  if (state.pose === 'Standing') {
+    prompt += `\n\nCRITICAL POSE REQUIREMENT: The model(s) MUST be captured in a complete, full-length, head-to-toe standing pose. The entire outfit, from head to the feet, must be fully visible in the frame. The feet, shoes, and legs must be completely visible, standing on the ground. Do NOT crop the model's body, head, legs, or feet. Avoid any close-up, mid-shot, waist-up, or half-body compositions.`;
+  } else {
+    if ((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') {
+      prompt += `\n\nPOSE REQUIREMENT: For inner or main pages, the model(s) MUST be captured in a complete, full-length standing pose showing the entire outfit from head to toe. For the cover/close-up page specifically, a clear close-up/waist-up shot is acceptable.`;
+    } else {
+      prompt += `\n\nPOSE REQUIREMENT: The model(s) MUST be in a complete, full-length, head-to-toe pose showing the entire outfit. Do NOT crop the model's body, legs, or feet.`;
+    }
+  }
+
   if (state.animateReferenceImage) {
     prompt = `ANIMATION MODE: Use the provided image as the exact starting frame. Animate the model in the image naturally.`;
   }
@@ -450,7 +460,11 @@ You must perfectly copy the embroidery, motifs, pattern, color, and fabric textu
   
   // Add fidelity and denoising instructions to the prompt so the AI respects the user's choices
   if (state.fidelityMode) {
-    prompt += `\nFidelity Mode: ${state.fidelityMode}. Ensure strict adherence to the reference design.`;
+    if (state.fidelityMode === 'Ultra (Strict Design Matching)') {
+      prompt += `\n\nCRITICAL DESIGN FIDELITY OVERRIDE: STRICT 100% DESIGN MATCHING ACTIVE. The generated model(s) MUST wear the exact garment shown in the reference image(s). Keep every single design element, embroidery pattern, motif, print, weave, color shade, border detail, and neck/sleeve cut exactly 1:1 identical to the uploaded garment. Do NOT modify, alter, simplify, or reinvent any part of the garment design. Not even a single thread or detail should be different.`;
+    } else {
+      prompt += `\nFidelity Mode: ${state.fidelityMode}. Ensure strict adherence to the reference design.`;
+    }
   }
   if (state.denoisingStrength !== undefined) {
     prompt += `\nDenoising/Creativity Strength: ${state.denoisingStrength} (Lower means closer to original, higher means more creative variations).`;

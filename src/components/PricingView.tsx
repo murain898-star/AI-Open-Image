@@ -141,87 +141,130 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
 
   const plans = [
     {
-      name: "Starter",
+      name: "Basic",
       icon: Zap,
-      price: billingCycle === 'monthly' ? 200 : 2400,
-      credits: 20,
+      price: 100,
+      credits: 12,
       color: "blue",
       features: [
-        "20 Credits per month",
-        "~20 Standard Images",
-        "OR ~4 HD Videos (720p)",
+        "12 Credits",
+        "4K Image Generation",
         "Standard Generation Speed",
         "Basic Support"
       ]
     },
     {
-      name: "Pro",
+      name: "Basic Plus",
       icon: Star,
-      price: billingCycle === 'monthly' ? 500 : 6000,
-      credits: 50,
-      color: "indigo",
-      popular: true,
+      price: 200,
+      credits: 25,
+      color: "blue",
       features: [
-        "50 Credits per month",
-        "~50 Standard Images",
-        "OR ~10 HD Videos (720p)",
-        "Fast Generation Speed",
-        "Priority Support",
-        "Access to 4K & Ultra Models"
+        "25 Credits",
+        "4K Image Generation",
+        "Standard Generation Speed",
+        "Basic Support"
       ]
     },
     {
-      name: "Elite",
-      icon: Crown,
-      price: billingCycle === 'monthly' ? 1000 : 12000,
-      credits: 100,
-      color: "purple",
+      name: "Basic Pro",
+      icon: Zap,
+      price: 500,
+      credits: 62,
+      color: "blue",
       features: [
-        "100 Credits per month",
-        "~100 Standard Images",
-        "OR ~20 HD Videos (720p)",
-        "Fastest Generation Speed",
-        "24/7 Premium Support",
-        "Access to Gigapixel & 4K Video"
+        "62 Credits",
+        "4K Image Generation",
+        "Standard Generation Speed",
+        "Basic Support"
+      ]
+    },
+    {
+      name: "Premium",
+      icon: Crown,
+      price: 1000,
+      credits: 125,
+      color: "indigo",
+      popular: true,
+      features: [
+        "125 Credits",
+        "4K & 8K Upscaling",
+        "Priority Speed",
+        "Premium Support"
+      ]
+    },
+    {
+      name: "Premium Plus",
+      icon: Crown,
+      price: 2000,
+      credits: 250,
+      color: "indigo",
+      features: [
+        "250 Credits",
+        "4K & 8K Upscaling",
+        "Priority Speed",
+        "Premium Support"
+      ]
+    },
+    {
+      name: "Premium Pro",
+      icon: Crown,
+      price: 3000,
+      credits: 375,
+      color: "indigo",
+      features: [
+        "375 Credits",
+        "4K & 8K Upscaling",
+        "Priority Speed",
+        "Premium Support"
       ]
     },
     {
       name: "Business",
       icon: Briefcase,
-      price: billingCycle === 'monthly' ? 5000 : 60000,
-      credits: 500,
-      color: "amber",
+      price: 5000,
+      credits: 625,
+      color: "purple",
       features: [
-        "500 Credits per month",
-        "~500 Standard Images",
-        "OR ~100 HD Videos (720p)",
-        "Priority Queue Processing",
-        "Dedicated Account Manager",
-        "Commercial API Access"
+        "625 Credits",
+        "API Access",
+        "Highest Speed",
+        "Dedicated Account Manager"
       ]
     },
     {
-      name: "Enterprise",
-      icon: Building2,
-      price: billingCycle === 'monthly' ? 10000 : 120000,
-      credits: 1000,
-      color: "emerald",
+      name: "Business Plus",
+      icon: Briefcase,
+      price: 10000,
+      credits: 1250,
+      color: "purple",
       features: [
-        "1000 Credits per month",
-        "~1000 Standard Images",
-        "OR ~200 HD Videos (720p)",
-        "Highest Priority Queue",
-        "24/7 Phone Support",
-        "Custom Model Fine-tuning"
+        "1250 Credits",
+        "API Access",
+        "Highest Speed",
+        "Dedicated Account Manager"
+      ]
+    },
+    {
+      name: "Business Pro",
+      icon: Briefcase,
+      price: 15000,
+      credits: 1875,
+      color: "purple",
+      features: [
+        "1875 Credits",
+        "API Access",
+        "Highest Speed",
+        "Dedicated Account Manager"
       ]
     }
   ];
 
   const topUps = [
-    { credits: 5, price: 50 },
-    { credits: 25, price: 250 },
-    { credits: 50, price: 500 },
-    { credits: 100, price: 1000 }
+    { credits: 12, price: 100 },
+    { credits: 25, price: 200 },
+    { credits: 62, price: 500 },
+    { credits: 125, price: 1000 }
   ];
 
   return (
@@ -315,28 +358,37 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
         </div>
 
         {/* Credit Cost Breakdown */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">How Credits Work</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Image Generation</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex justify-between"><span>Low Res (Draft)</span> <span className="font-medium text-green-600 dark:text-green-400">Free (0 Credits)</span></li>
-                <li className="flex justify-between"><span>Standard / HD</span> <span className="font-medium">1 Credit</span></li>
-                <li className="flex justify-between"><span>FHD / 2K</span> <span className="font-medium">2 Credits</span></li>
-                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">3 Credits</span></li>
-                <li className="flex justify-between"><span>Gigapixel</span> <span className="font-medium">4 Credits</span></li>
+                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">1 Credit</span></li>
+                <li className="flex justify-between"><span>Gigapixel (8K)</span> <span className="font-medium">2 Credits</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Video Generation (Veo)</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">1 Credit/sec</span></li>
-                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">2 Credits/sec</span></li>
-                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">3 Credits/sec</span></li>
+                <li className="flex justify-between"><span>Any Resolution</span> <span className="font-medium">1 Credit / sec</span></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Poster & Catalogue</h4>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li className="flex justify-between"><span>Poster</span> <span className="font-medium">13 Credits</span></li>
+                <li className="flex justify-between"><span>Catalogue</span> <span className="font-medium">2 Credits / Page</span></li>
+                <li className="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  Total Cost = Poster: 13 Credits | Catalogue: Number of Pages × 2 Credits
+                </li>
+                <li className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                  1 Credit = ₹8
+                </li>
               </ul>
             </div>
           </div>

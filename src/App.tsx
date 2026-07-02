@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppState, Preset } from './types';
+import { AppState, Preset, getGenerationCost } from './types';
 import { Sidebar } from './components/Sidebar';
 import { ImagePreview } from './components/ImagePreview';
 import { NavigationRail } from './components/NavigationRail';
@@ -27,7 +27,22 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
-  const [userCredits, setUserCredits] = useState<number>(0);
+  const [userCredits, setUserCredits] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('fashion_ai_credits');
+      if (stored !== null) return parseInt(stored);
+      localStorage.setItem('fashion_ai_credits', '5');
+      return 5;
+    } catch (e) {
+      return 5;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fashion_ai_credits', userCredits.toString());
+    } catch (e) {}
+  }, [userCredits]);
   const [freeGenerationsUsed, setFreeGenerationsUsed] = useState<number>(() => {
     try {
       return parseInt(localStorage.getItem('fashion_ai_free_used') || '0');
@@ -81,8 +96,14 @@ export default function App() {
     cataloguePages: 12,
     posterPages: 1,
     posterMainPageModels: 6,
-    catalogueModels: [],
-    posterModels: [],
+    catalogueModels: Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
+    })),
+    posterModels: Array.from({ length: 7 }, (_, i) => ({
+      id: i + 1,
+      outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
+    })),
     coverCloseupImage: null,
     coverSareeImage: null,
     coverBlouseImage: null,
@@ -151,15 +172,7 @@ export default function App() {
     setError(null);
     setProgressMsg(null);
     try {
-      const videoMultiplier = newState.outputFormat === 'video' ? (newState.videoDuration || 1) : 1;
-      const baseCost = newState.outputFormat === 'video'
-        ? (newState.videoResolution === '4K Ultra Master' ? 3 : newState.videoResolution === '1080p' ? 2 : 1)
-        : (newState.quality === 'Low Res (Free)' ? 0 : 
-           newState.quality === 'Standard' || newState.quality === 'HD' ? 1 :
-           newState.quality === 'FHD' || newState.quality === '2K' ? 2 :
-           newState.quality === '4K' ? 3 : 
-           newState.quality === 'Ultra' ? 4 : 5);
-      const cost = baseCost * videoMultiplier;
+      const cost = getGenerationCost(newState);
       
       const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
       if (cost > 0 && effectiveCredits < cost) {
@@ -254,25 +267,7 @@ export default function App() {
     setState(currentState);
 
     try {
-      const videoMultiplier = currentState.outputFormat === 'video' ? (currentState.videoDuration || 1) : 1;
-      let pageMultiplier = 1;
-      if (currentState.outputFormat === 'image') {
-        if (currentState.creationType === 'Poster') {
-          pageMultiplier = currentState.posterPages || 1;
-        } else if (currentState.creationType === 'Catalogue') {
-          pageMultiplier = currentState.cataloguePages || 12;
-        }
-      }
-      
-      const modelMultiplier = currentState.modelCount || 1;
-      const baseCost = currentState.outputFormat === 'video' 
-        ? (currentState.videoResolution === '4K Ultra Master' ? 3 : currentState.videoResolution === '1080p' ? 2 : 1)
-        : (currentState.quality === 'Low Res (Free)' ? 0 : 
-           currentState.quality === 'Standard' || currentState.quality === 'HD' ? 1 :
-           currentState.quality === 'FHD' || currentState.quality === '2K' ? 2 :
-           currentState.quality === '4K' ? 3 : 
-           currentState.quality === 'Ultra' ? 4 : 5);
-      const cost = baseCost * videoMultiplier * pageMultiplier * modelMultiplier;
+      const cost = getGenerationCost(currentState);
 
       const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
       if (cost > 0 && effectiveCredits < cost) {

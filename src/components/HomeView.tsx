@@ -174,23 +174,32 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
             <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">How Credits Work</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Image Generation</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex justify-between"><span>Low Res (Draft)</span> <span className="font-medium text-green-600 dark:text-green-400">Free (0 Credits)</span></li>
-                <li className="flex justify-between"><span>Standard / HD</span> <span className="font-medium">1 Credit</span></li>
-                <li className="flex justify-between"><span>FHD / 2K</span> <span className="font-medium">2 Credits</span></li>
-                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">3 Credits</span></li>
-                <li className="flex justify-between"><span>Gigapixel</span> <span className="font-medium">4 Credits</span></li>
+                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">1 Credit</span></li>
+                <li className="flex justify-between"><span>Gigapixel (8K)</span> <span className="font-medium">2 Credits</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Video Generation (Veo)</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>720p Video</span> <span className="font-medium">1 Credit/sec</span></li>
-                <li className="flex justify-between"><span>1080p Video</span> <span className="font-medium">2 Credits/sec</span></li>
-                <li className="flex justify-between"><span>4K Ultra Master</span> <span className="font-medium">3 Credits/sec</span></li>
+                <li className="flex justify-between"><span>Any Resolution</span> <span className="font-medium">1 Credit / sec</span></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Poster & Catalogue</h4>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li className="flex justify-between"><span>Poster</span> <span className="font-medium">13 Credits</span></li>
+                <li className="flex justify-between"><span>Catalogue</span> <span className="font-medium">2 Credits / Page</span></li>
+                <li className="text-xs text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  Total Cost = Poster: 13 Credits | Catalogue: Number of Pages × 2 Credits
+                </li>
+                <li className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                  1 Credit = ₹8
+                </li>
               </ul>
             </div>
           </div>

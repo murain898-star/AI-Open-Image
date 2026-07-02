@@ -117,3 +117,26 @@ export interface Preset {
   name: string;
   state: PresetState;
 }
+
+export function getGenerationCost(state: AppState): number {
+  const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
+  const baseCost = state.outputFormat === 'video' 
+    ? 1 
+    : (state.quality === 'Gigapixel' ? 2 : 1);
+
+  if (state.outputFormat === 'video') {
+    return baseCost * videoMultiplier;
+  }
+
+  if (state.creationType === 'Poster') {
+    return 13;
+  }
+
+  if (state.creationType === 'Catalogue') {
+    return 2 * (state.cataloguePages || 12);
+  }
+
+  // Default Image Generation:
+  const modelCost = state.modelCount || 1;
+  return baseCost * modelCost;
+}
