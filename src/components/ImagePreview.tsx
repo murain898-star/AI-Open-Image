@@ -284,7 +284,7 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
   const handleDownload = async () => {
     if (!image) return;
 
-    if (image.type === 'image' && (state.brandLogo || state.designNumber)) {
+    if (image.type === 'image') {
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -298,9 +298,59 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
           baseImg.src = image.url;
         });
 
-        canvas.width = baseImg.width;
-        canvas.height = baseImg.height;
-        ctx.drawImage(baseImg, 0, 0);
+        let targetWidth = baseImg.width;
+        let targetHeight = baseImg.height;
+
+        if (state.customWidth && state.customHeight) {
+          if (state.customUnit === 'inches') {
+            const dpi = state.customDPI || 300;
+            targetWidth = Math.round(state.customWidth * dpi);
+            targetHeight = Math.round(state.customHeight * dpi);
+          } else if (state.customUnit === 'cm') {
+            const dpi = state.customDPI || 300;
+            targetWidth = Math.round((state.customWidth / 2.54) * dpi);
+            targetHeight = Math.round((state.customHeight / 2.54) * dpi);
+          } else if (state.customUnit === 'pixels') {
+            targetWidth = Math.round(state.customWidth);
+            targetHeight = Math.round(state.customHeight);
+          }
+        }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        // Perform cover-fit cropping of baseImg onto target custom width/height canvas
+        const iw = baseImg.width;
+        const ih = baseImg.height;
+        const r = Math.min(targetWidth / iw, targetHeight / ih);
+        let nw = iw * r;
+        let nh = ih * r;
+        if (nw < targetWidth) {
+          const r2 = targetWidth / nw;
+          nw *= r2;
+          nh *= r2;
+        }
+        if (nh < targetHeight) {
+          const r2 = targetHeight / nh;
+          nw *= r2;
+          nh *= r2;
+        }
+        const cw = targetWidth / (nw / iw);
+        const ch = targetHeight / (nh / ih);
+        const cx = (iw - cw) * 0.5;
+        const cy = (ih - ch) * 0.5;
+
+        ctx.drawImage(
+          baseImg,
+          Math.max(0, cx),
+          Math.max(0, cy),
+          Math.min(iw, cw),
+          Math.min(ih, ch),
+          0,
+          0,
+          targetWidth,
+          targetHeight
+        );
 
         if (state.brandLogo) {
           const logoImg = new Image();
@@ -360,6 +410,10 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
     }
   };
 
+  const previewAspectRatio = (state.customWidth && state.customHeight)
+    ? `${state.customWidth}/${state.customHeight}`
+    : undefined;
+
   return (
     <div className="flex-1 bg-gray-50 dark:bg-gray-900 p-8 relative overflow-hidden transition-colors flex flex-col">
       <div 
@@ -407,8 +461,9 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
                   transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomScale})`,
                   transformOrigin: 'center center',
                   transition: isPanning || dragState ? 'none' : 'transform 0.15s ease-out',
+                  aspectRatio: previewAspectRatio,
                 }}
-                className="relative inline-block max-w-full max-h-full"
+                className="relative inline-block max-w-full max-h-full h-[95%] shadow-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
               >
                 {image.type === 'video' ? (
                   <video src={image.url} autoPlay loop controls className="max-w-full max-h-full object-contain block" />
@@ -417,7 +472,11 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
                     ref={imageRef}
                     src={image.url} 
                     alt="Generated Fashion" 
-                    className="max-w-full max-h-full object-contain block select-none pointer-events-none" 
+                    style={{ 
+                      aspectRatio: previewAspectRatio,
+                      objectPosition: 'center center'
+                    }}
+                    className="max-w-full max-h-full w-full h-full object-contain block select-none pointer-events-none" 
                   />
                 )}
                 

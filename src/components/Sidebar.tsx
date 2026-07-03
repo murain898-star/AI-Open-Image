@@ -177,7 +177,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => { updateState('outputFormat', 'image'); updateState('imageModel', 'gemini-hq'); }}
+              onClick={() => { updateState('outputFormat', 'image'); updateState('imageModel', 'gemini-fast'); }}
               className={`py-2 px-3 text-sm font-medium rounded-lg transition-colors ${
                 state.outputFormat === 'image'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -212,35 +212,8 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Aspect Ratio</label>
-                <select
-                  value={state.aspectRatio}
-                  onChange={e => updateState('aspectRatio', e.target.value as AspectRatio)}
-                  className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                >
-                  <option value="1:1">1:1 (Square)</option>
-                  <option value="3:4">3:4 (Portrait)</option>
-                  <option value="4:3">4:3 (Landscape)</option>
-                  <option value="9:16">9:16 (Story/Reel)</option>
-                  <option value="16:9">16:9 (Widescreen)</option>
-                  <option value="1:4">1:4 (Banner Portrait)</option>
-                  <option value="1:8">1:8 (Tall Banner)</option>
-                  <option value="4:1">4:1 (Banner Landscape)</option>
-                  <option value="8:1">8:1 (Wide Banner)</option>
-                  <option value="12x18">12x18 (Poster)</option>
-                  <option value="6x9">6x9 (Book Cover)</option>
-                  <option value="13x19">13x19 (Super B)</option>
-                  <option value="9x12">9x12 (Art Print)</option>
-                  <option value="13x40">13x40 (Panoramic Vertical)</option>
-                  <option value="13x30">13x30 (Panoramic Portrait)</option>
-                  <option value="10x14">10x14 (Art Canvas)</option>
-                  <option value="Custom">Custom Dimensions</option>
-                </select>
-              </div>
-
-              {state.aspectRatio === 'Custom' && (
-                <div className="space-y-2">
+              <div className="space-y-2">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Image Dimensions</label>
                   <div className="flex justify-between items-center">
                     <label className="block text-[10px] text-gray-500 dark:text-gray-400">Unit</label>
                     <select
@@ -258,8 +231,8 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Width ({state.customUnit === 'pixels' ? 'px' : state.customUnit === 'inches' ? 'in' : 'cm'})</label>
                       <input
                         type="number"
-                        value={state.customWidth}
-                        onChange={e => updateState('customWidth', parseFloat(e.target.value) || (state.customUnit === 'inches' ? 10 : state.customUnit === 'cm' ? 25 : 1024))}
+                        value={state.customWidth || (state.customUnit === 'inches' ? 6 : state.customUnit === 'cm' ? 15 : 1024)}
+                        onChange={e => updateState('customWidth', parseFloat(e.target.value) || (state.customUnit === 'inches' ? 6 : state.customUnit === 'cm' ? 15 : 1024))}
                         className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                       />
                     </div>
@@ -267,14 +240,14 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Height ({state.customUnit === 'pixels' ? 'px' : state.customUnit === 'inches' ? 'in' : 'cm'})</label>
                       <input
                         type="number"
-                        value={state.customHeight}
-                        onChange={e => updateState('customHeight', parseFloat(e.target.value) || (state.customUnit === 'inches' ? 10 : state.customUnit === 'cm' ? 25 : 1024))}
+                        value={state.customHeight || (state.customUnit === 'inches' ? 9 : state.customUnit === 'cm' ? 22 : 1280)}
+                        onChange={e => updateState('customHeight', parseFloat(e.target.value) || (state.customUnit === 'inches' ? 9 : state.customUnit === 'cm' ? 22 : 1280))}
                         className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                       />
                     </div>
                   </div>
                   {(state.customUnit === 'inches' || state.customUnit === 'cm') && (
-                    <div className="pt-1">
+                    <div className="pt-1 space-y-1">
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1">Resolution (DPI)</label>
                       <select
                         value={state.customDPI || 300}
@@ -285,10 +258,10 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                         <option value="150">150 DPI (Print Draft)</option>
                         <option value="300">300 DPI (High Quality Print)</option>
                       </select>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">Setting 300 DPI ensures high-resolution professional print-ready output.</p>
                     </div>
                   )}
                 </div>
-              )}
             </div>
           ) : (
             <div className="space-y-4 pt-2 animate-in fade-in">
@@ -664,7 +637,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                 else {
                   const offset = index - 2;
                   const garmentNum = Math.floor(offset / 2) + 1;
-                  const poseType = offset % 2 === 0 ? 'Single/Double Standing' : 'Close-up Pose';
+                  const poseType = offset % 2 === 0 ? 'Single/Double Standing' : 'Elegant Standing Pose';
                   pageName = `Page ${index + 1}: Garment ${garmentNum} (${poseType})`;
                 }
 
@@ -711,7 +684,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           ) : state.creationType === 'Poster' && state.posterPages === 2 ? (
             <div className="space-y-6">
               {state.posterModels.map((model, index) => {
-                const pageName = index === 0 ? 'Cover Page (Close-up Pose)' : `Main Page Model ${index}`;
+                const pageName = index === 0 ? 'Cover Page (Standing Pose)' : `Main Page Model ${index}`;
                 return (
                   <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
                     <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
@@ -872,6 +845,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               <option value="Sitting">Sitting</option>
               <option value="Dynamic">Dynamic</option>
               <option value="Fancy Pose">Fancy Pose</option>
+              {/* Pose select dropdown has close-up removed entirely */}
             </select>
           </div>
 

@@ -8,7 +8,6 @@ async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 
       let width = img.width;
       let height = img.height;
       
-      // If the image is already small enough, don't resize or compress it
       if (width <= maxWidth && height <= maxHeight) {
         resolve(base64Str);
         return;
@@ -29,15 +28,12 @@ async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Preserve transparency by using PNG if original is PNG
         const isPng = base64Str.startsWith('data:image/png');
         if (!isPng) {
-          // Fill white background for JPEGs to avoid black backgrounds on transparent images
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, width, height);
         }
         ctx.drawImage(img, 0, 0, width, height);
-        // Use PNG for transparency, otherwise JPEG with high quality
         resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.95));
       } else {
         resolve(base64Str);
@@ -49,8 +45,7 @@ async function resizeImageBase64(base64Str: string, maxWidth = 768, maxHeight = 
 }
 
 async function ensureApiKey(model: string): Promise<void> {
-  const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
-
+  const requiresPaidKey = model.startsWith('gemini-3') || model.startsWith('veo');
   if (requiresPaidKey && window.aistudio && window.aistudio.hasSelectedApiKey) {
     const hasKey = await window.aistudio.hasSelectedApiKey();
     if (!hasKey) {
@@ -60,19 +55,14 @@ async function ensureApiKey(model: string): Promise<void> {
 }
 
 function getApiKey(model: string): string {
-  const requiresPaidKey = model === 'gemini-3.1-flash-image-preview' || model.startsWith('veo');
-  
+  const requiresPaidKey = model.startsWith('gemini-3') || model.startsWith('veo');
   let platformKey = '';
   try {
     if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
       platformKey = process.env.API_KEY;
     }
-  } catch (e) {
-    // Ignore ReferenceError if process is not defined
-  }
+  } catch (e) {}
 
-  // If we are in the AI studio iframe, we use the injected platform key
-  // @ts-ignore
   if (window.aistudio) {
     if (requiresPaidKey && platformKey) return platformKey;
     // @ts-ignore
@@ -81,8 +71,6 @@ function getApiKey(model: string): string {
     if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
     return platformKey || 'PROXY';
   }
-
-  // Always use a dummy key on the client to route through our secure backend proxy
   return 'PROXY';
 }
 
@@ -91,10 +79,7 @@ function extractBase64Data(dataUrl: string) {
   if (!matches || matches.length !== 3) {
     throw new Error('Invalid base64 string');
   }
-  return {
-    mimeType: matches[1],
-    data: matches[2]
-  };
+  return { mimeType: matches[1], data: matches[2] };
 }
 
 export async function generateFashionMedia(state: AppState, onProgress?: (msg: string) => void): Promise<{url: string, type: 'image' | 'video'}> {
@@ -102,15 +87,21 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   let modelName: string = state.imageModel;
   
   if (provider === 'google') {
-    modelName = state.imageModel === 'gemini-hq' ? 'gemini-3.1-flash-image-preview' : 
-                state.imageModel === 'veo-fast' ? 'veo-3.1-fast-generate-preview' : 'gemini-2.5-flash-image';
+    // Map to valid Gemini 3.1 image and video models
+    // Automatically select high-quality model if user requests 4K, Gigapixel (8K), or Print
+    const isHighQuality = state.quality === '4K' || state.quality === 'Gigapixel' || state.quality === 'Print (5792x8688)' || state.imageModel === 'gemini-hq' || (state.customWidth === 6 && state.customHeight === 9 && state.customUnit === 'inches');
+    modelName = isHighQuality 
+      ? 'gemini-3.1-flash-image' 
+      : state.imageModel === 'veo-fast' 
+        ? 'veo-3.1-lite-generate-preview' 
+        : 'gemini-3.1-flash-lite-image'; // Fallback to fast image model
   }
   
   await ensureApiKey(modelName);
   const apiKey = getApiKey(modelName);
   
   if (!apiKey) {
-    throw new Error("Missing API Key. Please make sure your VITE_GEMINI_API_KEY is configured in your Environment Variables (like Vercel settings or .env file) to generate media.");
+    throw new Error("Missing API Key configuration.");
   }
 
   const parts: any[] = [];
@@ -119,8 +110,6 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
 
   const maxDim = state.quality === 'Low Res (Free)' ? 512 : 
                  (state.quality === '4K' || state.quality === 'Gigapixel' || state.quality === 'Print (5792x8688)') ? 2048 : 1024;
-
-  // 1. Add Images FIRST (AI models process visual context better when it comes first)
   if (state.animateReferenceImage) {
     const resized = await resizeImageBase64(state.animateReferenceImage, maxDim, maxDim);
     const { mimeType, data } = extractBase64Data(resized);
@@ -129,8 +118,19 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
     baseImageForVideo = { mimeType, data };
     baseImageUrl = resized;
   } else {
+    if (state.background === 'Uploaded' && state.backgroundImage) {
+      try {
+        const resizedBg = await resizeImageBase64(state.backgroundImage, maxDim, maxDim);
+        const { mimeType, data } = extractBase64Data(resizedBg);
+        parts.push({ inlineData: { mimeType, data } });
+        parts.push({ text: "Background Reference Image: Place the model and garments into this specific environment." });
+      } catch (err) {
+        console.error("Failed to process background image:", err);
+      }
+    }
+
     if ((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') {
-      const pageName = state.creationType === 'Catalogue' ? 'Cover Page (Close-up)' : 'Poster Cover Page (Close-up)';
+      const pageName = state.creationType === 'Catalogue' ? 'Cover Page (Standing Pose)' : 'Poster Cover Page (Standing Pose)';
       if (state.garmentType === 'Dress') {
         if (state.coverDressTopImage) {
           const resized = await resizeImageBase64(state.coverDressTopImage, maxDim, maxDim);
@@ -145,12 +145,6 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
           parts.push({ inlineData: { mimeType, data } });
           parts.push({ text: `${pageName} Bottom/Pants design reference.` });
         }
-        if (state.coverDressDupattaImage) {
-          const resized = await resizeImageBase64(state.coverDressDupattaImage, maxDim, maxDim);
-          const { mimeType, data } = extractBase64Data(resized);
-          parts.push({ inlineData: { mimeType, data } });
-          parts.push({ text: `${pageName} Dupatta/Scarf design reference.` });
-        }
       } else if (state.mode === 'saree' || state.garmentType === 'Saree') {
         if (state.coverSareeImage) {
           const resized = await resizeImageBase64(state.coverSareeImage, maxDim, maxDim);
@@ -159,340 +153,151 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
           parts.push({ text: `${pageName} Saree Drape design reference.` });
           if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
         }
-        if (state.coverBlouseImage) {
-          const resized = await resizeImageBase64(state.coverBlouseImage, maxDim, maxDim);
-          const { mimeType, data } = extractBase64Data(resized);
-          parts.push({ inlineData: { mimeType, data } });
-          parts.push({ text: `${pageName} Blouse design reference.` });
-        }
-      } else {
-        if (state.coverCloseupImage) {
-          const resized = await resizeImageBase64(state.coverCloseupImage, maxDim, maxDim);
-          const { mimeType, data } = extractBase64Data(resized);
-          parts.push({ inlineData: { mimeType, data } });
-          parts.push({ text: `${pageName} design reference.` });
-          if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-        }
       }
     }
     
-    if (state.creationType === 'Poster' && state.posterPages === 2) {
-      for (let i = 0; i < (state.posterModels || []).length; i++) {
-        const model = state.posterModels[i];
-        const pageName = `Main Page Model ${i + 1}`;
-        if (model.garmentType === 'Dress') {
-          if (model.dressTopImage) {
-            const resized = await resizeImageBase64(model.dressTopImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} Top/Kurti design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-          if (model.dressBottomImage) {
-            const resized = await resizeImageBase64(model.dressBottomImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} Bottom/Pants design reference.` });
-          }
-          if (model.dressDupattaImage) {
-            const resized = await resizeImageBase64(model.dressDupattaImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} Dupatta/Scarf design reference.` });
-          }
-        } else if (model.garmentType === 'Saree') {
-          if (model.sareeImage) {
-            const resized = await resizeImageBase64(model.sareeImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} Saree Drape design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-          if (model.blouseImage) {
-            const resized = await resizeImageBase64(model.blouseImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} Blouse design reference.` });
-          }
-        } else {
-          if (model.outfitImage) {
-            const resized = await resizeImageBase64(model.outfitImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `Poster ${pageName} ${model.garmentType !== 'Auto' ? model.garmentType : 'outfit'} design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-        }
-      }
-    } else if (state.mode === 'catalogue') {
-      for (let index = 0; index < (state.catalogueModels || []).length; index++) {
-        const model = state.catalogueModels[index];
-        const pageName = state.creationType === 'Catalogue' ? `Inner Catalogue - Model ${index + 1}` : `Model ${model.id}`;
-        
-        if (model.garmentType === 'Dress') {
-          if (model.dressTopImage) {
-            const resized = await resizeImageBase64(model.dressTopImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} Top/Kurti design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-          if (model.dressBottomImage) {
-            const resized = await resizeImageBase64(model.dressBottomImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} Bottom/Pants design reference.` });
-          }
-          if (model.dressDupattaImage) {
-            const resized = await resizeImageBase64(model.dressDupattaImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} Dupatta/Scarf design reference.` });
-          }
-        } else if (model.garmentType === 'Saree') {
-          if (model.sareeImage) {
-            const resized = await resizeImageBase64(model.sareeImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} Saree Drape design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-          if (model.blouseImage) {
-            const resized = await resizeImageBase64(model.blouseImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} Blouse design reference.` });
-          }
-        } else {
-          if (model.outfitImage) {
-            const resized = await resizeImageBase64(model.outfitImage, maxDim, maxDim);
-            const { mimeType, data } = extractBase64Data(resized);
-            parts.push({ inlineData: { mimeType, data } });
-            parts.push({ text: `${pageName} ${model.garmentType !== 'Auto' ? model.garmentType : 'outfit'} design reference.` });
-            if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
-          }
-        }
-      }
-    } else if (state.mode === 'saree') {
+    if (state.mode === 'saree') {
       if (state.sareeImage) {
         const resized = await resizeImageBase64(state.sareeImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: "Reference Image 1: The exact saree design to use." });
+        parts.push({ text: "Reference Image 1: Saree Drape design pattern." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.blouseImage) {
         const resized = await resizeImageBase64(state.blouseImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: "Reference Image 2: The exact blouse design to use." });
-        if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+        parts.push({ text: "Reference Image 2: Blouse design matching the saree." });
       }
     } else if (state.garmentType === 'Dress') {
       if (state.dressTopImage) {
         const resized = await resizeImageBase64(state.dressTopImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: "Reference Image 1: The exact top/kurti design to use." });
+        parts.push({ text: "Reference Image 1: Dress/Kurti Top design." });
         baseImageForVideo = { mimeType, data };
       }
       if (state.dressBottomImage) {
         const resized = await resizeImageBase64(state.dressBottomImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: "Reference Image 2: The exact bottom/pants design to use." });
-        if (!baseImageForVideo) baseImageForVideo = { mimeType, data };
+        parts.push({ text: "Reference Image 2: Dress Bottom/Pants/Salwar design." });
       }
       if (state.dressDupattaImage) {
         const resized = await resizeImageBase64(state.dressDupattaImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: "Reference Image 3: The exact dupatta/scarf design to use." });
+        parts.push({ text: "Reference Image 3: Dress Dupatta/Scarf design." });
       }
     } else {
       if (state.outfitImage) {
         const resized = await resizeImageBase64(state.outfitImage, maxDim, maxDim);
         const { mimeType, data } = extractBase64Data(resized);
         parts.push({ inlineData: { mimeType, data } });
-        parts.push({ text: `Reference Image: The exact ${state.garmentType !== 'Auto' ? state.garmentType : 'outfit'} design to use.` });
+        parts.push({ text: "Reference Image: Outfit design." });
         baseImageForVideo = { mimeType, data };
       }
     }
-
-    if (state.enableJewellery && state.jewelleryImage) {
-      const resized = await resizeImageBase64(state.jewelleryImage, maxDim, maxDim);
-      const { mimeType, data } = extractBase64Data(resized);
-      parts.push({ inlineData: { mimeType, data } });
-      parts.push({ text: "Reference Image: The exact jewellery to use." });
-    }
-
-    if (state.background === 'Uploaded' && state.backgroundImage) {
-      const resized = await resizeImageBase64(state.backgroundImage, maxDim, maxDim);
-      const { mimeType, data } = extractBase64Data(resized);
-      parts.push({ inlineData: { mimeType, data } });
-      parts.push({ text: "Reference Image: The background to use." });
-    }
   }
-
-  // 2. Build a highly direct, simplified prompt
   const fancyPoses = [
     "striking a high-fashion editorial pose in a full-length head-to-toe standing view",
     "elegantly touching their hair in a full-length head-to-toe standing pose",
-    "doing a dramatic over-the-shoulder glance in a full-length head-to-toe standing pose",
-    "in a chic, confident stance with hands on hips, fully visible from head to toe",
-    "striking a fierce runway model pose in a full-body standing head-to-toe composition"
+    "in a chic, confident stance with hands on hips, fully visible from head to toe"
   ];
 
-  let poseDescription = `in a full-length head-to-toe standing ${state.pose.toLowerCase()} pose`;
-  if (state.pose === 'Sitting') {
-    poseDescription = `in a full-body sitting pose, with the entire body from head to toe fully visible in the frame`;
-  } else if (state.pose === 'Fancy Pose') {
+  let actualPose = state.pose;
+  if (actualPose === 'Close-up') {
+    actualPose = 'Standing';
+  }
+
+  let poseDescription = `in a full-length head-to-toe standing ${actualPose.toLowerCase()} pose`;
+  if (actualPose === 'Walking') {
+    poseDescription = `walking naturally in a full-length head-to-toe wide shot`;
+  } else if (actualPose === 'Sitting') {
+    poseDescription = `in a full-body sitting pose, with the entire body from head to toe fully visible`;
+  } else if (actualPose === 'Fancy Pose') {
     poseDescription = fancyPoses[Math.floor(Math.random() * fancyPoses.length)];
   }
 
-  let baseSubject = `full-body head-to-toe fashion catalog photo of a ${state.gender.toLowerCase()} model`;
-  
-  const layoutVariations = [
-    "creative and unique framing",
-    "dynamic asymmetric composition",
-    "elegant grid-like arrangement",
-    "editorial collage style",
-    "modern overlapping presentation",
-    "classic symmetrical layout",
-    "cinematic wide-angle perspective"
-  ];
-  const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
+  const isCustomVertical = state.customHeight > state.customWidth;
 
-  if (state.creationType === 'Poster') {
-    baseSubject = `cinematic, high-end fashion poster featuring a ${state.gender.toLowerCase()} model in a full-body standing pose, head-to-toe, shown in a ${randomLayout}`;
-  } else if (state.creationType === 'Catalogue') {
-    baseSubject = `clean, commercial fashion catalogue spread featuring a ${state.gender.toLowerCase()} model in a full-body standing pose, head-to-toe, with a ${randomLayout}`;
-  } else {
-    baseSubject = `high-quality, professional full-body standing head-to-toe fashion photo of a ${state.gender.toLowerCase()} model`;
+  function getBackgroundDescription(appState: AppState): string {
+    switch (appState.background) {
+      case 'Solid Color':
+        return `against a clean, solid, minimalist flat studio background with a subtle soft shadow. The background is a solid modern light grey or off-white color.`;
+      case 'Outdoor':
+        return `standing outdoors on a clean tiled stone pathway next to a beautiful clear luxury swimming pool resort, with clear turquoise water, green palm trees, warm sunny evening/sunset golden lighting, and soft water reflections.`;
+      case 'Studio':
+        return `inside a professional high-end fashion photography studio with soft overhead softboxes, clean floor, elegant professional studio backdrops, and subtle studio lights.`;
+      case 'Minimalist Studio':
+        return `in a modern minimalist studio with neutral warm tones, simple geometric arches, soft shadows, and clean elegant architectural lines.`;
+      case 'Vintage Mansion':
+        return `inside a grand luxurious vintage mansion lobby with elegant classical marble pillars, high arched windows, ornate wood details, and warm luxurious ambient lighting.`;
+      case 'Cyberpunk City':
+        return `standing on a high-tech cyberpunk city street at night, with towering skyscrapers, glowing holographic signs, neon pink and blue lights, and atmospheric mist.`;
+      case 'Neon Lights':
+        return `surrounded by sleek, modern artistic neon lights in a futuristic indoor creative studio space.`;
+      case 'Beach Resort':
+        return `standing outdoors on a clean tiled stone pathway next to a gorgeous luxury swimming pool at a tropical beach resort, with palm trees, clear blue skies, and warm golden hour sunset lighting casting soft glowing highlights on the model.`;
+      case 'Luxury Hotel':
+        return `in a grand opulent lobby of a 7-star luxury hotel, with beautiful marble floors, crystal chandeliers, large elegant columns, and glass architecture.`;
+      case 'Urban Street':
+        return `standing on a clean modern upscale city street with beautiful glass boutiques, elegant urban architecture, and soft outdoor afternoon daylight.`;
+      case 'Custom':
+        return appState.customBackground ? `with a custom backdrop described as: ${appState.customBackground}` : `against an elegant professional backdrop`;
+      case 'Uploaded':
+        return `using the provided background environment reference image. The model must be seamlessly composited into this background with matching realistic lighting, shadows, and perspective.`;
+      case 'AI Generated':
+        return appState.aiBackgroundStyle ? `with a custom AI-generated background style: ${appState.aiBackgroundStyle}` : `with a highly aesthetic AI-generated backdrop`;
+      default:
+        return `in a beautiful ambient backdrop such as a luxurious resort outdoor lounge or elegant studio with natural light.`;
+    }
   }
 
-  let prompt = `Generate a ${baseSubject} ${poseDescription}.`;
+  let baseSubject = `A premium, high-fashion editorial campaign photograph of a ${state.gender.toLowerCase()} model standing elegantly in a full-length, head-to-toe presentation. This is a complete full-length standing portrait displaying the entire body from head to toe, with absolutely no cropping of any part of the body.`;
 
-  if (state.modelCount > 1) {
-    if (state.creationType === 'Poster') {
-      prompt = `Generate a cinematic, high-end fashion poster featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}. Use a ${randomLayout}.`;
-    } else if (state.creationType === 'Catalogue') {
-      prompt = `Generate a clean, commercial fashion catalogue spread featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}. Use a ${randomLayout}.`;
-    } else {
-      prompt = `Generate a high-quality, professional fashion photo layout featuring EXACTLY ${state.modelCount} ${state.gender.toLowerCase()} models posing together ${poseDescription}.`;
+  if (state.gender === 'Female') {
+    baseSubject = `A stunningly beautiful Indian female model with perfect symmetrical facial features, warm glowing skin tone, expressive friendly smile, and long elegant dark brown wavy hair flowing beautifully down her shoulders. She stands elegantly in a full-length, head-to-toe presentation, with her entire body from head to toe fully visible.`;
+    
+    if (state.mode === 'saree' || state.garmentType === 'Saree') {
+      baseSubject += ` She is adorned with beautiful traditional ornate kundan jewelry, including a large multi-layered pearl and green beaded Kundan necklace, matching statement Kundan jhumka earrings, a beautiful maang tikka sitting gracefully on her hairline, and matching gold and glass bangles on both wrists.`;
+    } else if (state.garmentType === 'Dress' || state.garmentType === 'Kurti' || state.garmentType === 'Suit' || state.garmentType === 'Lehenga') {
+      baseSubject += ` She is styled with elegant traditional Kundan jewelry, including a matching delicate Kundan necklace and statement earrings, and beautiful gold bracelets.`;
     }
   }
   
-  if (state.creationType === 'Poster') {
-    prompt += `\n\nCOMPOSITION: The layout MUST be completely unique and different for this generation, using a striking visual poster arrangement. Leave elegant negative space for typography and titles. Use dramatic, cinematic lighting, and high editorial fashion aesthetics. You can include inset frames or creative overlapping if it suits the poster style.`;
-    if (state.posterPages === 2) {
-      prompt += `\n\nSPREAD REQUIREMENT: This is a 2-page poster design. Please visually represent this as a two-part composition or a collage: Page 1 (Cover) MUST feature a dramatic close-up or back pose, and Page 2 (Main) features EXACTLY ${state.posterMainPageModels} models in a dynamic layout.`;
-    }
-  } else if (state.creationType === 'Catalogue') {
-    prompt += `\n\nCOMPOSITION: The layout MUST be a unique catalogue spread for this generation. Arrange the models or frames in a dynamic and fresh way. Ensure perfect even lighting, neutral or complementary backgrounds, and absolutely clear focus on the garments' details.`;
-    if (state.modelCount >= 1) {
-      prompt += `\n\nSPREAD REQUIREMENT: This represents an extensive catalogue layout. Please generate a highly composite, multi-frame layout strictly structured as follows: Page 1 is the Cover Page (Close-up layout), Pages 2 & 3 form an inner spread (joined but visually separated), followed by 2 pages for each model (1 full pose and 1 close-up pose), then a 2-page joined Index spread, and finally the Back Page. Ensure the models remain visually consistent across the spread.`;
-    }
-  }
+  let prompt = `[COMPOSITION MANDATE: EXTREME WIDE-ANGLE LONG SHOT. THE CAMERA IS POSITIONED FAR BACK AND LOW TO CAPTURE 100% OF THE MODEL FROM HEAD TO FEET IN A SINGLE FRAME]. Absolute complete uncropped model silhouette, head-to-toe fully visible. ${baseSubject} ${poseDescription}.
+The model is styled in the garments from the reference images (top, bottom, dupatta, saree, blouse). Since the reference garments in the input images might be cropped, close-ups, or flat-lays, you MUST automatically complete the entire look by rendering the complete pants (such as elegant matching trousers, palazzo pants, matching salwar, or skirt) and matching designer shoes, sandals, high heels, or traditional footwear.
 
-  if (state.quality === 'Print (5792x8688)') {
-    prompt += `\n\nRESOLUTION INSTRUCTION: This must be a hyper-high-resolution 144 Megapixel image suitable for 5792x8688 camera print in a 2:3 poster aspect ratio. Ensure incredible micro-details, ultra-sharp focus, and absolute photorealism.`;
-  } else if (state.quality === 'Gigapixel') {
-    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of hyper-detailed, crystal clear, native 8K/Gigapixel resolution. Every thread, fabric texture, embroidery shine, and facial detail MUST be flawlessly sharp and extremely crisp. Do NOT generate any blur, noise, compression, or soft textures. Make it look like an ultra-crisp 8K professional DSLR studio shot.`;
-  } else if (state.quality === '4K') {
-    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of native 4K resolution with extreme sharpness and detail. The fabric weave, design details, and facial skin texture must be flawlessly sharp, with zero blur or soft focus. Make it match a premium, professional 4K DSLR studio photoshoot.`;
-  } else {
-    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of ultra-high definition, photorealistic quality with extreme sharpness. The facial features, skin texture, and fabric details MUST be flawlessly sharp, matching the quality of a high-end DSLR studio photoshoot. Ensure there is no blur or AI artifacting.`;
-  }
+The model's footwear (shoes/sandals/heels) MUST be fully visible, standing firmly on the floor or ground, with a soft shadow cast on the floor beneath her shoes. The camera must be zoomed out so that there is clear visible floor/ground space underneath the model's feet and clear empty headroom above her hair.
 
-  // Handle print sizes
-  if (state.aspectRatio !== '1:1' && state.aspectRatio !== '3:4' && state.aspectRatio !== '4:3' && state.aspectRatio !== '9:16' && state.aspectRatio !== '16:9') {
-    if (state.aspectRatio === 'Custom') {
-      prompt += `\n\nSIZE INSTRUCTION: Compose the image explicitly for a physical dimension of ${state.customWidth} ${state.customUnit || 'inches'} width by ${state.customHeight} ${state.customUnit || 'inches'} height at ${state.customDPI || 300} DPI. The aspect ratio of the generated image MUST strictly match ${state.customWidth}:${state.customHeight}. Ensure the subject framing respects this exact proportional boundary.`;
-    } else {
-      const dimensions = state.aspectRatio.split('x');
-      if (dimensions.length === 2) {
-        prompt += `\n\nSIZE INSTRUCTION: Compose the image explicitly for a physical dimension of ${dimensions[0]} inches width by ${dimensions[1]} inches height at 300 DPI. The aspect ratio of the generated image MUST strictly match ${dimensions[0]}:${dimensions[1]}. Ensure the subject framing respects this exact proportional boundary.`;
-      }
-    }
-  }
-
-  prompt += `\n\nCRITICAL INSTRUCTION: The model(s) MUST be wearing the EXACT garment(s) shown in the provided reference image(s). 
-You must perfectly copy the embroidery, motifs, pattern, color, and fabric texture from the reference images onto the model's outfit.`;
-
-  if (state.modelCount > 1) {
-    prompt += `\nPay careful attention to which reference images belong to which model number, as each model in the group has different specific garments assigned to them.`;
-  }
-
-  prompt += `\nDO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact visual match of the uploaded garment(s).`;
-
-  // STRICT FULL-LENGTH FRAME REQUIREMENT
-  if ((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') {
-    prompt += `\n\nCRITICAL BODY-FRAMING REQUIREMENT (HEAD-TO-TOE): For the main or inner pages, the model(s) MUST be captured in a complete, full-length standing pose showing the entire body from head to toe. The feet, shoes, legs, and full outfit hem must be completely visible in-frame. For the cover/close-up page specifically, a clear close-up/waist-up shot is acceptable.`;
-  } else {
-    prompt += `\n\nCRITICAL POSE & BODY-FRAMING REQUIREMENT (HEAD-TO-TOE): The model(s) MUST be captured in a complete, full-length, head-to-toe standing pose. The entire body from head down to the feet must be 100% visible inside the image. The entire outfit, including the full lower border of the garment (saree, dress, or pants), and the model's feet/shoes, MUST be fully shown inside the frame. 
-
-COMPOSITION RULES:
-- The camera must be at a wide-angle or medium-wide distance to capture the entire model comfortably.
-- There must be a generous background padding (empty space) above the model's head and below the model's feet.
-- The model must be perfectly centered vertically and horizontally.
-- All body parts, including the head, face, hair, arms, torso, legs, and feet, MUST be 100% within the image canvas boundaries.
-- The bottom edge of the garment and the shoes/feet must have a clear visual margin from the bottom of the picture.
-
-STRICT EXCLUSIONS:
-- DO NOT crop, cut off, or truncate the model's legs, knees, shins, or feet.
-- DO NOT generate a waist-up, half-body, knee-up, close-up, or mid-shot.
-- Both feet must be clearly resting on the ground, fully visible in-frame.`;
-  }
-
-  if (state.animateReferenceImage) {
-    prompt = `ANIMATION MODE: Use the provided image as the exact starting frame. Animate the model in the image naturally.`;
-  }
-
-  if (state.inPaintingMode && state.inPaintingMask) {
-    const { mimeType, data } = extractBase64Data(state.inPaintingMask);
-    parts.push({ inlineData: { mimeType, data } });
-    parts.push({ text: "Mask Image (white areas are to be modified)." });
-    prompt += `\nIN-PAINTING TASK: Only modify the areas specified by the mask. Preserve the rest of the image exactly.`;
+Background environment: ${getBackgroundDescription(state)}`;
+  
+  prompt += `\n\n---\n`;
+  prompt += `CRITICAL COMPOSITION DIRECTIVES (MANDATORY FOR COMMERCIAL CATALOG):
+- EXTREME FULL SHOT: Zoom out the camera lens extensively. The model's complete body from head to toe (including the hair, shoulders, legs, ankles, feet, and shoes) MUST be 100% fully inside the image bounds.
+- HEAD AND FEET SPACE: Ensure there is substantial empty headspace above the model's head and clear ground/floor space below the model's shoes. The shoes must be fully visible and resting on the floor, not cut off by the bottom edge. No part of the model's body, clothing, or hair should touch or be cut off by any edge of the image frame.
+- STRICT NEGATIVE DIRECTIVE: Do NOT crop at the ankles, shins, knees, thighs, hips, waist, or torso. Do NOT generate a half-body shot, medium shot, close-up, or typical vertical portrait crop.
+- OVERRIDE REFERENCE CROP: Even if any of the provided garment reference images is a close-up, a flat-lay, or heavily cropped, IGNORE that crop completely. Re-imagine and project the garments onto a standing full-length model.
+- Footwear Detail: Beautifully matching high heels, designer sandals, or traditional mojris fully visible on the paved path/floor with soft shadows.
+- Aesthetic quality: photorealistic, hyper-detailed, 8k resolution, elegant professional catalog lighting, beautiful colors, premium fashion magazine aesthetic.`;
+  
+  if (isCustomVertical || state.quality === 'Print (5792x8688)') {
+    prompt += `\n- Composition Requirement: Perfect vertical aspect framing distribution. Do not cut any part of the subject.`;
   }
 
   if (state.styleExtra !== 'None') prompt += `\nStyle: ${state.styleExtra}.`;
   if (state.customPrompt) prompt += `\nAdditional details: ${state.customPrompt}.`;
-  
-  if (state.colorModifications && state.colorModifications.length > 0) {
-    const validMods = state.colorModifications.filter(m => m.element.trim() !== '' && m.color.trim() !== '');
-    if (validMods.length > 0) {
-      prompt += `\n\nCRITICAL COLOR INSTRUCTIONS:\n`;
-      validMods.forEach(mod => {
-        prompt += `- Change the color of the ${mod.element} to ${mod.color}.\n`;
-      });
-      prompt += `Ensure these color changes are applied accurately while preserving the original design patterns, embroidery, and textures.`;
-    }
-  }
 
-  if (state.background !== 'Uploaded') {
-    prompt += `\nBackground: ${state.background === 'Custom' ? state.customBackground : state.background}.`;
-  }
-  
-  // Add fidelity and denoising instructions to the prompt so the AI respects the user's choices
-  if (state.fidelityMode) {
-    if (state.fidelityMode === 'Ultra (Strict Design Matching)') {
-      prompt += `\n\nCRITICAL DESIGN FIDELITY OVERRIDE: STRICT 100% DESIGN MATCHING ACTIVE. The generated model(s) MUST wear the exact garment shown in the reference image(s). Keep every single design element, embroidery pattern, motif, print, weave, color shade, border detail, and neck/sleeve cut exactly 1:1 identical to the uploaded garment. Do NOT modify, alter, simplify, or reinvent any part of the garment design. Not even a single thread or detail should be different.`;
-    } else {
-      prompt += `\nFidelity Mode: ${state.fidelityMode}. Ensure strict adherence to the reference design.`;
-    }
-  }
-  if (state.denoisingStrength !== undefined) {
-    prompt += `\nDenoising/Creativity Strength: ${state.denoisingStrength} (Lower means closer to original, higher means more creative variations).`;
-  }
+  const finalPrompt = prompt;
+  const finalContents: any[] = [
+    { text: finalPrompt },
+    ...parts,
+    { text: `[CRITICAL RE-ENFORCEMENT: Remember, you MUST generate an absolute full-body, head-to-toe standing view. The model must be shown completely from head to feet/shoes. Do NOT crop at the ankles, knees, thighs, hips, or waist. The entire outfit, legs, ankles, and matching footwear MUST be 100% visible, resting on the floor/ground. Ensure there is visible floor/ground space under the shoes of the model, and empty headspace above the head. Zoom out the camera lens extensively to capture the entire figure in a wide shot.]` }
+  ];
 
-  let finalPrompt = prompt;
-  parts.push({ text: finalPrompt });
-
-  // Dynamically import to prevent process.env lookup errors at module load time in browser
   const { GoogleGenAI } = await import("@google/genai");
-
-  // Google Provider (Default)
   const aiOptions: any = { apiKey };
   if (apiKey === 'PROXY') {
     aiOptions.httpOptions = { baseUrl: window.location.origin + '/api/gemini' };
@@ -500,202 +305,107 @@ STRICT EXCLUSIONS:
   const ai = new GoogleGenAI(aiOptions);
 
   if (state.outputFormat === 'video') {
-    if (onProgress) onProgress(`Starting video generation (Target: ${state.videoDuration}s)...`);
-    let operation;
-    try {
-      operation = await ai.models.generateVideos({
-        model: 'veo-3.1-fast-generate-preview',
-        prompt: finalPrompt,
-        image: baseImageForVideo ? {
-          imageBytes: baseImageForVideo.data,
-          mimeType: baseImageForVideo.mimeType,
-        } : undefined,
-        config: {
-          numberOfVideos: 1,
-          resolution: state.videoResolution === '1080p' ? '1080p' : '720p',
-          aspectRatio: state.aspectRatio === '16:9' ? '16:9' : '9:16'
-        }
-      });
-
-      while (!operation.done) {
-        if (onProgress) onProgress("Generating base video... This may take a few minutes.");
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        operation = await ai.operations.getVideosOperation({operation: operation});
-      }
-    } catch (error: any) {
-      const errorMessage = error.message || String(error);
-      if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('Requested entity was not found')) {
-        if (window.aistudio) {
-          await window.aistudio.openSelectKey();
-        }
-        throw new Error("Permission Denied (403): Your selected API key does not have access to Veo Video Generation. Please select a key from a paid Google Cloud project with Veo enabled, then try again.");
-      }
-      if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
-        throw new Error("Service Unavailable (503): Google's Gemini AI servers are currently experiencing very high demand. This is a temporary server issue, not a problem with your app or API key. Please try again in a few minutes.");
-      }
-      throw new Error(`API Error: ${errorMessage}`);
-    }
-
-    let currentVideo = operation.response?.generatedVideos?.[0]?.video;
-    if (!currentVideo) throw new Error("No video returned from Gemini.");
-
-    let extensionsNeeded = 0;
-    if (typeof state.videoDuration === 'number' && state.videoDuration > 5) {
-      extensionsNeeded = Math.ceil((state.videoDuration - 5) / 5);
-    }
-
-    for (let i = 0; i < extensionsNeeded; i++) {
-      if (onProgress) onProgress(`Extending video (Part ${i + 1} of ${extensionsNeeded})...`);
-      operation = await ai.models.generateVideos({
-        model: 'veo-3.1-generate-preview',
-        prompt: finalPrompt,
-        video: currentVideo,
-        config: {
-          numberOfVideos: 1,
-          resolution: state.videoResolution === '1080p' ? '1080p' : '720p',
-          aspectRatio: state.aspectRatio === '16:9' ? '16:9' : '9:16'
-        }
-      });
-
-      while (!operation.done) {
-        if (onProgress) onProgress(`Generating extension ${i + 1}... This takes time.`);
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        operation = await ai.operations.getVideosOperation({operation: operation});
-      }
-      currentVideo = operation.response?.generatedVideos?.[0]?.video;
-      if (!currentVideo) throw new Error("Failed to extend video.");
-    }
-
-    const downloadLink = currentVideo.uri;
-    if (!downloadLink) throw new Error("No video URI returned.");
-    
-    if (onProgress) onProgress("Downloading final video...");
-    let downloadUrl = downloadLink;
-    if (apiKey === 'PROXY' && downloadLink.startsWith('https://generativelanguage.googleapis.com')) {
-      downloadUrl = downloadLink.replace('https://generativelanguage.googleapis.com', window.location.origin + '/api/gemini');
-    }
-    
-    const response = await fetch(downloadUrl, {
-      method: 'GET',
-      headers: apiKey !== 'PROXY' ? {
-        'x-goog-api-key': apiKey,
-      } : undefined,
+    if (onProgress) onProgress("Starting video generation...");
+    let operation = await ai.models.generateVideos({
+      model: modelName,
+      prompt: finalPrompt,
+      image: baseImageForVideo ? { imageBytes: baseImageForVideo.data, mimeType: baseImageForVideo.mimeType } : undefined,
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '9:16' }
     });
+    while (!operation.done) {
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      operation = await ai.operations.getVideosOperation({operation});
+    }
+    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+    if (!downloadLink) throw new Error("No video returned.");
+    const response = await fetch(downloadLink);
     const blob = await response.blob();
     return { url: URL.createObjectURL(blob), type: 'video' };
   } else {
     try {
       const isPrint = state.quality === 'Print (5792x8688)';
-      
-      let finalAspectRatio = state.aspectRatio;
-      if (isPrint) {
-        finalAspectRatio = '3:4';
-      } else if (state.aspectRatio === 'Custom') {
-        const ratio = state.customWidth / state.customHeight;
-        if (Math.abs(ratio - 1) < 0.1) finalAspectRatio = '1:1';
-        else if (ratio < 0.6) finalAspectRatio = '9:16';
-        else if (ratio < 0.85) finalAspectRatio = '3:4';
-        else if (ratio > 1.6) finalAspectRatio = '16:9';
-        else finalAspectRatio = '4:3';
-      } else if (state.aspectRatio !== '1:1' && state.aspectRatio !== '3:4' && state.aspectRatio !== '4:3' && state.aspectRatio !== '9:16' && state.aspectRatio !== '16:9') {
-        // Handle print sizes like '12x18'
-        const dims = state.aspectRatio.split('x');
-        if (dims.length === 2) {
-          const w = parseFloat(dims[0]);
-          const h = parseFloat(dims[1]);
-          const ratio = w / h;
-          if (Math.abs(ratio - 1) < 0.1) finalAspectRatio = '1:1';
-          else if (ratio < 0.6) finalAspectRatio = '9:16';
-          else if (ratio < 0.85) finalAspectRatio = '3:4';
-          else if (ratio > 1.6) finalAspectRatio = '16:9';
-          else finalAspectRatio = '4:3';
+      let finalAspectRatio: any = state.aspectRatio;
+
+      if (state.aspectRatio === 'Custom' || (state.customWidth && state.customHeight)) {
+        if (state.customHeight > state.customWidth) {
+          const targetRatio = state.customWidth / state.customHeight;
+          // Vertical sizes: "9:16" (0.5625) vs "3:4" (0.75) vs "1:1" (1.0)
+          // To ensure head & feet are not cropped, the generated aspect ratio must be greater than or equal to the target.
+          if (targetRatio <= 0.5625) {
+            finalAspectRatio = '9:16';
+          } else if (targetRatio <= 0.75) {
+            finalAspectRatio = '3:4'; // Standard vertical custom size (e.g. 6x9, 5x7, 8x10) maps to 3:4 to prevent head/feet crop!
+          } else {
+            finalAspectRatio = '1:1';
+          }
+        } else if (state.customWidth > state.customHeight) {
+          const targetRatio = state.customWidth / state.customHeight;
+          // Horizontal sizes: "4:3" (1.3333) vs "16:9" (1.7778)
+          if (targetRatio <= 1.3333) {
+            finalAspectRatio = '4:3';
+          } else {
+            finalAspectRatio = '16:9';
+          }
         } else {
           finalAspectRatio = '1:1';
         }
+      } else if (isPrint) {
+        finalAspectRatio = '9:16'; // High quality vertical prints should also default to 9:16 for complete full body standing photo!
+      }
+
+      // Ensure aspect ratio is supported by nano banana
+      const allowedAspectRatios = ["1:1", "3:4", "4:3", "9:16", "16:9"];
+      if (!allowedAspectRatios.includes(finalAspectRatio)) {
+        finalAspectRatio = '9:16'; // Fallback to 9:16 for vertical fashion catalogs
       }
 
       const imageConfig: any = {
-        aspectRatio: finalAspectRatio
+        aspectRatio: finalAspectRatio,
+        imageSize: (state.quality === 'Gigapixel' || state.quality === '4K' || isPrint) ? '4K' : state.quality === '2K' ? '2K' : '1K'
       };
-      
-      if (modelName.includes('image')) {
-        imageConfig.imageSize = (state.quality === 'Gigapixel' || state.quality === '4K' || isPrint) ? '4K' : state.quality === '2K' ? '2K' : state.quality === 'Low Res (Free)' ? '512px' : '1K';
-      }
 
+      if (onProgress) onProgress("Invoking Gemini Image Generation Engine...");
+
+      // For nano banana series models, we call generateContent to generate images
       const response = await ai.models.generateContent({
         model: modelName,
-        contents: {
-          parts: parts
-        },
+        contents: { parts: finalContents },
         config: {
           imageConfig: imageConfig
         }
       });
 
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          return { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`, type: 'image' };
+      let base64ImageBytes = '';
+      if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            base64ImageBytes = part.inlineData.data;
+            break;
+          }
         }
-      }
-      
-      throw new Error("No image data returned from Gemini.");
-    } catch (error: any) {
-      console.error("Gemini API Error:", error);
-      const errorMessage = error.message || String(error);
-      
-      if (errorMessage.includes('403') || errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('Requested entity was not found')) {
-        if (window.aistudio && window.aistudio.openSelectKey) {
-          await window.aistudio.openSelectKey();
-        }
-        throw new Error("Permission Denied (403): Your API key is invalid or doesn't have access. If you created this key in Google Cloud Console, you MUST enable the 'Generative Language API' for your project. Alternatively, create a key at aistudio.google.com/app/apikey.");
-      }
-      
-      if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-        throw new Error(`Quota Exceeded (429): If you are using Gemini HQ or Veo Video, they DO NOT have a free tier (you must enable billing). Switch to 'Gemini (Fast)' for free usage. If you are already on Gemini (Fast), you have hit the free limit. Try again later.\n\nOriginal Error: ${errorMessage}`);
       }
 
-      if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
-        throw new Error("Service Unavailable (503): Google's Gemini AI servers are currently experiencing very high demand. This is a temporary server issue, not a problem with your app or API key. Please try again in a few minutes.");
+      if (!base64ImageBytes) {
+        throw new Error("No image data returned from Gemini.");
       }
-      
-      if (errorMessage.includes('safety') || errorMessage.includes('blocked') || errorMessage.includes('content policy')) {
-        throw new Error("Safety Filter Blocked: Google's AI safety filters blocked this request. Try using a different reference image or simpler prompt.");
-      }
-      
-      // Throw the actual error so the user can see exactly what went wrong
-      throw new Error(`API Error: ${errorMessage}`);
+
+      return { url: `data:image/jpeg;base64,${base64ImageBytes}`, type: 'image' };
+    } catch (error: any) {
+      throw new Error(`API Error: ${error.message || error}`);
     }
   }
 }
 
 export async function analyzeVideo(videoBase64: string, question: string): Promise<string> {
   const apiKey = getApiKey('gemini-3.1-pro-preview');
-  if (!apiKey) {
-    throw new Error("API key is missing. Please check your environment variables.");
-  }
-  
+  if (!apiKey) throw new Error("API key is missing.");
   const { GoogleGenAI } = await import("@google/genai");
-  const aiOptions: any = { apiKey };
-  if (apiKey === 'PROXY') {
-    aiOptions.httpOptions = { baseUrl: window.location.origin + '/api/gemini' };
-  }
-  const ai = new GoogleGenAI(aiOptions);
+  const ai = new GoogleGenAI({ apiKey });
   const { mimeType, data } = extractBase64Data(videoBase64);
 
   const response = await ai.models.generateContent({
     model: 'gemini-3.1-pro-preview',
-    contents: [
-      {
-        inlineData: {
-          mimeType,
-          data
-        }
-      },
-      {
-        text: question
-      }
-    ]
+    contents: [{ inlineData: { mimeType, data } }, { text: question }]
   });
-
   return response.text || "No analysis returned.";
 }

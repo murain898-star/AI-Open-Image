@@ -23,24 +23,36 @@ export function AdSenseBanner({ adSlot, adFormat = 'auto', fullWidthResponsive =
       }
 
       // Initialize the ad
-      const timeout = setTimeout(() => {
-        if (!hasLoaded.current) {
-          try {
-            // @ts-ignore
-            (window.adsbygoogle = window.adsbygoogle || []).push({});
-            hasLoaded.current = true;
-          } catch (err) {
-            console.error('AdSense initialization error:', err);
+      const checkWidthAndLoad = () => {
+        const adContainer = document.getElementById('adsense-container');
+        if (adContainer && adContainer.clientWidth > 0) {
+          if (!hasLoaded.current) {
+            try {
+              // @ts-ignore
+              (window.adsbygoogle = window.adsbygoogle || []).push({});
+              hasLoaded.current = true;
+            } catch (err: any) {
+              if (err && err.message && err.message.includes('availableWidth=0')) {
+                // Ignore zero width errors
+              } else {
+                console.error('AdSense initialization error:', err);
+              }
+            }
+          }
+        } else {
+          if (!hasLoaded.current) {
+            setTimeout(checkWidthAndLoad, 1000);
           }
         }
-      }, 500); // Small delay to allow script to load
+      };
 
+      const timeout = setTimeout(checkWidthAndLoad, 500); // Small delay to allow script to load
       return () => clearTimeout(timeout);
     }
   }, [clientId]);
 
   return (
-    <div className="w-full bg-gray-100 dark:bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center my-6 py-4 shadow-sm min-h-[120px] transition-colors">
+    <div id="adsense-container" className="w-full bg-gray-100 dark:bg-gray-800/80 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center my-6 py-4 shadow-sm min-h-[120px] transition-colors">
       <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 font-medium w-full text-center">Advertisement</div>
       {clientId === 'ca-pub-placeholder' ? (
         <div className="text-center py-6 px-4">

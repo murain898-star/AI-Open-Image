@@ -40,13 +40,17 @@ async function startServer() {
   // API POST create-order
   app.all("/api/gemini/*", async (req, res) => {
     try {
-      const targetPath = req.originalUrl.replace('/api/gemini', '');
-      const targetUrl = `https://generativelanguage.googleapis.com${targetPath}`;
       const serverKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
 
       if (!serverKey) {
         return res.status(500).json({ error: "Server API key is not configured." });
       }
+
+      const targetPath = req.originalUrl.replace('/api/gemini', '');
+      const originalUrlString = `https://generativelanguage.googleapis.com${targetPath}`;
+      const parsedUrl = new URL(originalUrlString);
+      parsedUrl.searchParams.set('key', serverKey);
+      const targetUrl = parsedUrl.toString();
 
       const headers: any = {};
       if (req.headers['content-type']) {
