@@ -117,7 +117,8 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   let baseImageForVideo: { mimeType: string, data: string } | null = null;
   let baseImageUrl: string | null = null;
 
-  const maxDim = state.quality === 'Low Res (Free)' ? 512 : 768;
+  const maxDim = state.quality === 'Low Res (Free)' ? 512 : 
+                 (state.quality === '4K' || state.quality === 'Gigapixel' || state.quality === 'Print (5792x8688)') ? 2048 : 1024;
 
   // 1. Add Images FIRST (AI models process visual context better when it comes first)
   if (state.animateReferenceImage) {
@@ -335,19 +336,21 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
 
   // 2. Build a highly direct, simplified prompt
   const fancyPoses = [
-    "striking a high-fashion editorial pose",
-    "elegantly touching their hair",
-    "doing a dramatic over-the-shoulder glance",
-    "in a chic, confident stance with hands on hips",
-    "striking a fierce runway model pose"
+    "striking a high-fashion editorial pose in a full-length head-to-toe standing view",
+    "elegantly touching their hair in a full-length head-to-toe standing pose",
+    "doing a dramatic over-the-shoulder glance in a full-length head-to-toe standing pose",
+    "in a chic, confident stance with hands on hips, fully visible from head to toe",
+    "striking a fierce runway model pose in a full-body standing head-to-toe composition"
   ];
 
-  let poseDescription = `in a ${state.pose.toLowerCase()} pose`;
-  if (state.pose === 'Fancy Pose') {
+  let poseDescription = `in a full-length head-to-toe standing ${state.pose.toLowerCase()} pose`;
+  if (state.pose === 'Sitting') {
+    poseDescription = `in a full-body sitting pose, with the entire body from head to toe fully visible in the frame`;
+  } else if (state.pose === 'Fancy Pose') {
     poseDescription = fancyPoses[Math.floor(Math.random() * fancyPoses.length)];
   }
 
-  let baseSubject = `full-body fashion catalog photo of a ${state.gender.toLowerCase()} model`;
+  let baseSubject = `full-body head-to-toe fashion catalog photo of a ${state.gender.toLowerCase()} model`;
   
   const layoutVariations = [
     "creative and unique framing",
@@ -361,11 +364,11 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
   const randomLayout = layoutVariations[Math.floor(Math.random() * layoutVariations.length)];
 
   if (state.creationType === 'Poster') {
-    baseSubject = `cinematic, high-end fashion poster featuring a ${state.gender.toLowerCase()} model in a ${randomLayout}`;
+    baseSubject = `cinematic, high-end fashion poster featuring a ${state.gender.toLowerCase()} model in a full-body standing pose, head-to-toe, shown in a ${randomLayout}`;
   } else if (state.creationType === 'Catalogue') {
-    baseSubject = `clean, commercial fashion catalogue spread featuring a ${state.gender.toLowerCase()} model with a ${randomLayout}`;
+    baseSubject = `clean, commercial fashion catalogue spread featuring a ${state.gender.toLowerCase()} model in a full-body standing pose, head-to-toe, with a ${randomLayout}`;
   } else {
-    baseSubject = `high-quality, professional full-body fashion photo of a ${state.gender.toLowerCase()} model`;
+    baseSubject = `high-quality, professional full-body standing head-to-toe fashion photo of a ${state.gender.toLowerCase()} model`;
   }
 
   let prompt = `Generate a ${baseSubject} ${poseDescription}.`;
@@ -394,6 +397,10 @@ export async function generateFashionMedia(state: AppState, onProgress?: (msg: s
 
   if (state.quality === 'Print (5792x8688)') {
     prompt += `\n\nRESOLUTION INSTRUCTION: This must be a hyper-high-resolution 144 Megapixel image suitable for 5792x8688 camera print in a 2:3 poster aspect ratio. Ensure incredible micro-details, ultra-sharp focus, and absolute photorealism.`;
+  } else if (state.quality === 'Gigapixel') {
+    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of hyper-detailed, crystal clear, native 8K/Gigapixel resolution. Every thread, fabric texture, embroidery shine, and facial detail MUST be flawlessly sharp and extremely crisp. Do NOT generate any blur, noise, compression, or soft textures. Make it look like an ultra-crisp 8K professional DSLR studio shot.`;
+  } else if (state.quality === '4K') {
+    prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of native 4K resolution with extreme sharpness and detail. The fabric weave, design details, and facial skin texture must be flawlessly sharp, with zero blur or soft focus. Make it match a premium, professional 4K DSLR studio photoshoot.`;
   } else {
     prompt += `\n\nQUALITY INSTRUCTION: The generated image MUST be of ultra-high definition, photorealistic quality with extreme sharpness. The facial features, skin texture, and fabric details MUST be flawlessly sharp, matching the quality of a high-end DSLR studio photoshoot. Ensure there is no blur or AI artifacting.`;
   }
@@ -419,14 +426,23 @@ You must perfectly copy the embroidery, motifs, pattern, color, and fabric textu
 
   prompt += `\nDO NOT invent a new design. DO NOT change the design. It must be a 1:1 exact visual match of the uploaded garment(s).`;
 
-  if (state.pose === 'Standing') {
-    prompt += `\n\nCRITICAL POSE REQUIREMENT: The model(s) MUST be captured in a complete, full-length, head-to-toe standing pose. The entire outfit, from head to the feet, must be fully visible in the frame. The feet, shoes, and legs must be completely visible, standing on the ground. Do NOT crop the model's body, head, legs, or feet. Avoid any close-up, mid-shot, waist-up, or half-body compositions.`;
+  // STRICT FULL-LENGTH FRAME REQUIREMENT
+  if ((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') {
+    prompt += `\n\nCRITICAL BODY-FRAMING REQUIREMENT (HEAD-TO-TOE): For the main or inner pages, the model(s) MUST be captured in a complete, full-length standing pose showing the entire body from head to toe. The feet, shoes, legs, and full outfit hem must be completely visible in-frame. For the cover/close-up page specifically, a clear close-up/waist-up shot is acceptable.`;
   } else {
-    if ((state.creationType === 'Poster' && state.posterPages === 2) || state.creationType === 'Catalogue') {
-      prompt += `\n\nPOSE REQUIREMENT: For inner or main pages, the model(s) MUST be captured in a complete, full-length standing pose showing the entire outfit from head to toe. For the cover/close-up page specifically, a clear close-up/waist-up shot is acceptable.`;
-    } else {
-      prompt += `\n\nPOSE REQUIREMENT: The model(s) MUST be in a complete, full-length, head-to-toe pose showing the entire outfit. Do NOT crop the model's body, legs, or feet.`;
-    }
+    prompt += `\n\nCRITICAL POSE & BODY-FRAMING REQUIREMENT (HEAD-TO-TOE): The model(s) MUST be captured in a complete, full-length, head-to-toe standing pose. The entire body from head down to the feet must be 100% visible inside the image. The entire outfit, including the full lower border of the garment (saree, dress, or pants), and the model's feet/shoes, MUST be fully shown inside the frame. 
+
+COMPOSITION RULES:
+- The camera must be at a wide-angle or medium-wide distance to capture the entire model comfortably.
+- There must be a generous background padding (empty space) above the model's head and below the model's feet.
+- The model must be perfectly centered vertically and horizontally.
+- All body parts, including the head, face, hair, arms, torso, legs, and feet, MUST be 100% within the image canvas boundaries.
+- The bottom edge of the garment and the shoes/feet must have a clear visual margin from the bottom of the picture.
+
+STRICT EXCLUSIONS:
+- DO NOT crop, cut off, or truncate the model's legs, knees, shins, or feet.
+- DO NOT generate a waist-up, half-body, knee-up, close-up, or mid-shot.
+- Both feet must be clearly resting on the ground, fully visible in-frame.`;
   }
 
   if (state.animateReferenceImage) {
@@ -602,7 +618,7 @@ You must perfectly copy the embroidery, motifs, pattern, color, and fabric textu
         aspectRatio: finalAspectRatio
       };
       
-      if (modelName === 'gemini-3.1-flash-image-preview') {
+      if (modelName.includes('image')) {
         imageConfig.imageSize = (state.quality === 'Gigapixel' || state.quality === '4K' || isPrint) ? '4K' : state.quality === '2K' ? '2K' : state.quality === 'Low Res (Free)' ? '512px' : '1K';
       }
 

@@ -97,6 +97,7 @@ export interface AppState {
   
   // Branding Details
   brandLogo: string | null;
+  removeLogoBackground?: boolean;
   brandWatermark: boolean;
   brandName: string;
   designNumber: string;

@@ -144,6 +144,7 @@ export default function App() {
     jewelleryDescription: '',
     colorModifications: [],
     brandLogo: null,
+    removeLogoBackground: true,
     brandWatermark: false,
     brandName: '',
     designNumber: '',

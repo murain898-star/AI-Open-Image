@@ -117,8 +117,45 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             <Uploader 
               label="Upload Brand Logo" 
               image={state.brandLogo} 
-              onChange={img => updateState('brandLogo', img)} 
+              onChange={async (img) => {
+                if (img && state.removeLogoBackground) {
+                  try {
+                    const { removeWhiteBackground } = await import('../lib/imageUtils');
+                    const processed = await removeWhiteBackground(img);
+                    updateState('brandLogo', processed);
+                  } catch (err) {
+                    console.error("Failed to remove white background from logo:", err);
+                    updateState('brandLogo', img);
+                  }
+                } else {
+                  updateState('brandLogo', img);
+                }
+              }} 
             />
+            <div className="flex items-center gap-2 -mt-2 mb-2">
+              <input
+                type="checkbox"
+                id="removeLogoBackground"
+                checked={state.removeLogoBackground || false}
+                onChange={async (e) => {
+                  const checked = e.target.checked;
+                  updateState('removeLogoBackground', checked);
+                  if (checked && state.brandLogo) {
+                    try {
+                      const { removeWhiteBackground } = await import('../lib/imageUtils');
+                      const processed = await removeWhiteBackground(state.brandLogo);
+                      updateState('brandLogo', processed);
+                    } catch (err) {
+                      console.error("Failed to remove logo background:", err);
+                    }
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <label htmlFor="removeLogoBackground" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                Remove White Background
+              </label>
+            </div>
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Design Number</label>
               <input

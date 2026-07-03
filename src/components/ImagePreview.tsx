@@ -316,17 +316,8 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
           const pillWidth = (logoLayout.w / 100) * canvas.width;
           const pillHeight = (logoLayout.h / 100) * canvas.height;
 
-          ctx.fillStyle = 'white';
-          ctx.beginPath();
-          ctx.roundRect(pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
-          ctx.fill();
-          
-          const padY = pillHeight * 0.15;
-          const padX = pillWidth * 0.15;
-          const logoHeight = pillHeight - padY * 2;
-          const logoWidth = pillWidth - padX * 2;
-          
-          ctx.drawImage(logoImg, pillX + padX, pillY + padY, logoWidth, logoHeight);
+          // Draw the transparent PNG logo directly without white background or padding!
+          ctx.drawImage(logoImg, pillX, pillY, pillWidth, pillHeight);
         }
 
         if (state.designNumber) {
@@ -447,7 +438,7 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
                     }`}
                     onPointerDown={(e) => handleItemPointerDown(e, 'logo')}
                   >
-                    <div className="w-full h-full bg-white rounded-full px-2 py-1 flex items-center justify-center shadow-lg border-2 border-white/50 overflow-hidden">
+                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
                       <img src={state.brandLogo} alt="Brand Logo" className="w-full h-full object-contain pointer-events-none" />
                     </div>
                     {isTransformMode && selectedItem === 'logo' && renderResizeHandles('logo')}
