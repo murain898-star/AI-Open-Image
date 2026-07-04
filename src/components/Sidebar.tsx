@@ -630,7 +630,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
               {state.catalogueModels.map((model, index) => {
                 let pageName = '';
                 const total = state.catalogueModels.length;
-                if (index === 0) pageName = 'Page 1: Cover Page';
+                if (index === 0) pageName = state.coverCloseup !== false ? 'Page 1: Cover Page (Close-up Pose)' : 'Page 1: Cover Page (Standing Pose)';
                 else if (index === 1) pageName = 'Page 2: Inner Page';
                 else if (index === total - 1) pageName = `Page ${total}: Back Page`;
                 else if (index === total - 2) pageName = `Page ${total - 1}: Index (Double Page)`;
@@ -643,7 +643,23 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
 
                 return (
                   <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
-                    <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                    <div className="flex flex-col gap-1.5">
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                      {index === 0 && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800 mt-1">
+                          <input
+                            type="checkbox"
+                            id={`coverCloseup-${model.id}`}
+                            checked={state.coverCloseup !== false}
+                            onChange={e => updateState('coverCloseup', e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor={`coverCloseup-${model.id}`} className="text-xs font-normal text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                            Close-up Cover Pose (Face, Jewelry, Upper Outfit)
+                          </label>
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
                       <select
@@ -684,10 +700,28 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
           ) : state.creationType === 'Poster' && state.posterPages === 2 ? (
             <div className="space-y-6">
               {state.posterModels.map((model, index) => {
-                const pageName = index === 0 ? 'Cover Page (Standing Pose)' : `Main Page Model ${index}`;
+                const pageName = index === 0 
+                  ? (state.coverCloseup !== false ? 'Cover Page (Close-up Pose)' : 'Cover Page (Standing Pose)') 
+                  : `Main Page Model ${index}`;
                 return (
                   <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
-                    <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                    <div className="flex flex-col gap-1.5">
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">{pageName} Garments</h4>
+                      {index === 0 && (
+                        <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800 mt-1">
+                          <input
+                            type="checkbox"
+                            id={`posterCoverCloseup-${model.id}`}
+                            checked={state.coverCloseup !== false}
+                            onChange={e => updateState('coverCloseup', e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <label htmlFor={`posterCoverCloseup-${model.id}`} className="text-xs font-normal text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                            Close-up Cover Pose (Face, Jewelry, Upper Outfit)
+                          </label>
+                        </div>
+                      )}
+                    </div>
                     <div>
                       <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Garment Type</label>
                       <select
@@ -727,7 +761,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
             </div>
           ) : state.modelCount > 1 && state.creationType !== 'Poster' ? (
             <div className="space-y-6">
-              {state.catalogueModels.map((model, index) => (
+              {state.catalogueModels.slice(0, state.modelCount).map((model, index) => (
                 <div key={model.id} className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
                   <h4 className="font-medium text-sm text-gray-900 dark:text-white">Model {model.id} Garments</h4>
                   <div>

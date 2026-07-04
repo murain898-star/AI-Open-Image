@@ -54,6 +54,7 @@ export interface AppState {
   posterMainPageModels: number;
   catalogueModels: CatalogueModelGarments[];
   posterModels: CatalogueModelGarments[];
+  coverCloseup?: boolean;
   coverCloseupImage: string | null;
   coverSareeImage: string | null;
   coverBlouseImage: string | null;

@@ -36,6 +36,15 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       setPaymentError(null);
       setPaymentSuccessMessage(null);
       
+      if (price === 0) {
+        if (onPurchaseSuccess) {
+          onPurchaseSuccess(credits);
+        }
+        setPaymentSuccessMessage(`Success! ${credits} Free Credits have been successfully added to your account.`);
+        setIsProcessing(false);
+        return;
+      }
+      
       const isLoaded = await loadRazorpay();
       
       if (!isLoaded || !window.Razorpay) {
@@ -318,16 +327,16 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full text-sm font-bold mb-4">
                 <Zap className="w-4 h-4" /> Try Before You Buy
               </div>
-              <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">₹10 Quick Trial</h3>
+              <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">5 Credits Free Trial</h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
-                Not sure yet? Get 1 Credit to try our premium AI generation for just ₹10. See the magic for yourself!
+                Not sure yet? Get 5 Free Credits to try our premium AI generation. Try before you buy!
               </p>
               <button 
-                onClick={() => initiatePayment('Trial Plan', 10, 1)}
+                onClick={() => initiatePayment('Trial Plan', 0, 5)}
                 disabled={isProcessing}
                 className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-2 text-lg"
               >
-                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Try Now for ₹10'}
+                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : '5 Credits Free to Trial - Start Now'}
               </button>
             </div>
             

@@ -47,14 +47,14 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full text-sm font-bold mb-4">
                 <Zap className="w-4 h-4" /> Try Before You Buy
               </div>
-              <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">₹10 Quick Trial</h3>
+              <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-2">5 Credits Free Trial</h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
-                Not sure yet? Get 1 Credit to try our premium AI generation for just ₹10. See the magic for yourself!
+                Not sure yet? Get 5 Free Credits to try our premium AI generation. Try before you buy!
               </p>
               <button 
                 className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md flex items-center gap-2 text-lg pointer-events-none"
               >
-                Try Now for ₹10
+                5 Credits Free to Trial - Start Now
               </button>
             </div>
             

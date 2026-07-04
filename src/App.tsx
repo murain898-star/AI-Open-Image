@@ -104,6 +104,7 @@ export default function App() {
       id: i + 1,
       outfitImage: null, dressTopImage: null, dressBottomImage: null, dressDupattaImage: null, sareeImage: null, blouseImage: null, garmentType: 'Auto'
     })),
+    coverCloseup: true,
     coverCloseupImage: null,
     coverSareeImage: null,
     coverBlouseImage: null,
@@ -131,7 +132,7 @@ export default function App() {
     outputFormat: 'image',
     videoDuration: 5,
     videoResolution: '1080p',
-    quality: 'Standard',
+    quality: '4K',
     aspectRatio: '3:4',
     customWidth: 6,
     customHeight: 9,

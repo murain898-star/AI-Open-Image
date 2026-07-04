@@ -300,8 +300,10 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
 
         let targetWidth = baseImg.width;
         let targetHeight = baseImg.height;
+        let isCustomDimensionsSet = false;
 
         if (state.customWidth && state.customHeight) {
+          isCustomDimensionsSet = true;
           if (state.customUnit === 'inches') {
             const dpi = state.customDPI || 300;
             targetWidth = Math.round(state.customWidth * dpi);
@@ -313,6 +315,25 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
           } else if (state.customUnit === 'pixels') {
             targetWidth = Math.round(state.customWidth);
             targetHeight = Math.round(state.customHeight);
+          }
+        }
+
+        if (!isCustomDimensionsSet) {
+          // Keep actual high-resolution dimensions for 4K and Gigapixel (8K) to prevent quality loss during download
+          const currentLongEdge = Math.max(targetWidth, targetHeight);
+          let requiredLongEdge = baseImg.width; // Default to generated upscaled source image size
+          if (state.quality === '4K') {
+            requiredLongEdge = 4096;
+          } else if (state.quality === 'Gigapixel') {
+            requiredLongEdge = 8192;
+          } else if (state.quality === 'Print (5792x8688)') {
+            requiredLongEdge = 8688;
+          }
+
+          if (currentLongEdge < requiredLongEdge) {
+            const scaleFactor = requiredLongEdge / currentLongEdge;
+            targetWidth = Math.round(targetWidth * scaleFactor);
+            targetHeight = Math.round(targetHeight * scaleFactor);
           }
         }
 
@@ -394,7 +415,7 @@ export function ImagePreview({ image, isGenerating, progressMsg, state, onAnimat
           ctx.fillText(state.designNumber, textX, textY);
         }
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
         const a = document.createElement('a');
         a.href = dataUrl;
         a.download = `AI-Open-Image-${Date.now()}.jpg`;
