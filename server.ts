@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
@@ -166,9 +167,27 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    // SPA fallback
+    // SPA fallback with dynamic OpenGraph / WhatsApp preview replacement
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      const htmlPath = path.join(distPath, "index.html");
+      try {
+        if (fs.existsSync(htmlPath)) {
+          let html = fs.readFileSync(htmlPath, "utf8");
+          const protocol = req.headers["x-forwarded-proto"] || req.protocol || "https";
+          const host = req.get("host");
+          const currentUrl = `${protocol}://${host}`;
+          
+          // Replace all occurrences of the hardcoded vercel domain with current deployment domain
+          html = html.replace(/https:\/\/ai-open-image\.vercel\.app/g, currentUrl);
+          
+          res.send(html);
+        } else {
+          res.sendFile(htmlPath);
+        }
+      } catch (err) {
+        console.error("Error reading index.html for dynamic OG injection:", err);
+        res.sendFile(htmlPath);
+      }
     });
   }
 
