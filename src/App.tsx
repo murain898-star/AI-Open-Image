@@ -10,6 +10,10 @@ import { LoginView } from './components/LoginView';
 import { VideoUnderstandingView } from './components/VideoUnderstandingView';
 import { PricingView } from './components/PricingView';
 import { UpscaleView } from './components/UpscaleView';
+import { PrivacyPolicyView } from './components/pages/PrivacyPolicyView';
+import { TermsView } from './components/pages/TermsView';
+import { RefundView } from './components/pages/RefundView';
+import { ContactView } from './components/pages/ContactView';
 import { generateFashionMedia } from './services/aiService';
 import { Wand2, Loader2 } from 'lucide-react';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -364,6 +368,11 @@ export default function App() {
           onBackToCreate={() => { setUpscaleTargetUrl(null); setCurrentView('create'); }}
         />
       )}
+
+      {currentView === 'privacy' && <PrivacyPolicyView setCurrentView={setCurrentView} />}
+      {currentView === 'terms' && <TermsView setCurrentView={setCurrentView} />}
+      {currentView === 'refund' && <RefundView setCurrentView={setCurrentView} />}
+      {currentView === 'contact' && <ContactView setCurrentView={setCurrentView} />}
       
       {currentView === 'create' && (
         <>

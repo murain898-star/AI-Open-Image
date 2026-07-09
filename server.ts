@@ -178,7 +178,7 @@ async function startServer() {
           const currentUrl = `${protocol}://${host}`;
           
           // Replace all occurrences of the hardcoded vercel domain with current deployment domain
-          html = html.replace(/https:\/\/ai-open-image\.vercel\.app/g, currentUrl);
+          html = html.replace(/https:\/\/ai-openimage\.com/g, currentUrl);
           
           res.send(html);
         } else {

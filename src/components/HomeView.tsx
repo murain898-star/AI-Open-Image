@@ -2,6 +2,7 @@ import React from 'react';
 import { Wand2, Image as ImageIcon, Video, Zap, ChevronRight, Info } from 'lucide-react';
 import { AppState } from '../types';
 import { AdSenseBanner } from './AdSenseBanner';
+import { Footer } from './Footer';
 
 interface HomeViewProps {
   setCurrentView: (view: string) => void;
@@ -204,6 +205,8 @@ export function HomeView({ setCurrentView, setState }: HomeViewProps) {
             </div>
           </div>
         </div>
+
+        <Footer setCurrentView={setCurrentView} />
       </div>
     </div>
   );
