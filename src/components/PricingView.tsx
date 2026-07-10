@@ -10,7 +10,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
-  const [customAmount, setCustomAmount] = useState<string>('1');
+  const [customAmount, setCustomAmount] = useState<string>('100');
 
   const loadRazorpay = async (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -521,14 +521,14 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
         <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 max-w-xl mx-auto shadow-sm">
           <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Custom Amount</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Enter a custom amount in Rupees (minimum ₹1) to test the integration or pay a specific amount.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Enter a custom amount in Rupees (minimum ₹100) to test the integration or pay a specific amount.</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</span>
               <input
                 type="number"
-                min="1"
+                min="100"
                 step="1"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
@@ -539,10 +539,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
             <button
               onClick={() => {
                 const amt = parseInt(customAmount);
-                if (amt >= 1) {
+                if (amt >= 100) {
                   initiatePayment(`Custom Payment (₹${amt})`, amt, Math.max(1, Math.floor(amt / 10)));
                 } else {
-                  setPaymentError('Minimum amount is ₹1');
+                  setPaymentError('Minimum amount is ₹100');
                 }
               }}
               disabled={isProcessing}
