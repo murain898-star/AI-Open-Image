@@ -27,7 +27,27 @@ export default function App() {
   const [progressMsg, setProgressMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
-  const [currentView, setCurrentView] = useState<string>('home');
+  const [currentView, setCurrentViewState] = useState<string>(() => {
+    const path = window.location.pathname;
+    if (path === '/privacy' || path === '/privacy.html') return 'privacy';
+    if (path === '/terms' || path === '/terms.html') return 'terms';
+    if (path === '/refund' || path === '/refund.html') return 'refund';
+    if (path === '/contact' || path === '/contact.html') return 'contact';
+    return 'home';
+  });
+
+  const setCurrentView = (view: string) => {
+    setCurrentViewState(view);
+    let path = '/';
+    if (view === 'privacy') path = '/privacy';
+    else if (view === 'terms') path = '/terms';
+    else if (view === 'refund') path = '/refund';
+    else if (view === 'contact') path = '/contact';
+    
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+  };
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');

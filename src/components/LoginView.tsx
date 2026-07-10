@@ -88,6 +88,36 @@ export function LoginView() {
     }
   };
 
+  const handleDemoLogin = async () => {
+    if (!auth) {
+      setError("Firebase auth is not initialized.");
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    
+    const demoEmail = 'demo@ai-openimage.com';
+    const demoPassword = 'razorpaydemo123';
+    
+    try {
+      await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          await createUserWithEmailAndPassword(auth, demoEmail, demoPassword);
+        } catch (createErr: any) {
+          console.error("Demo account creation error:", createErr);
+          handleAuthError(createErr);
+        }
+      } else {
+        console.error("Demo auth error:", err);
+        handleAuthError(err);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleLoginPopup = async () => {
     if (!auth) {
       setError("Firebase auth is not initialized. Please check your configuration.");
@@ -200,6 +230,15 @@ export function LoginView() {
 
               <div className="space-y-3">
                 <button
+                  type="button"
+                  onClick={handleDemoLogin}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-6 py-3.5 rounded-xl font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Test Razorpay Demo Login
+                </button>
+                <button
                   onClick={handleLoginPopup}
                   className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3.5 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -230,8 +269,8 @@ export function LoginView() {
         </div>
         <div className="bg-gray-50 dark:bg-gray-800/50 px-8 py-4 border-t border-gray-100 dark:border-gray-700 text-center transition-colors">
           <div className="flex justify-center gap-4 mb-2 text-xs text-indigo-600 dark:text-indigo-400">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms of Service</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:underline">Privacy Policy</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:underline">Terms of Service</a>
           </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500 font-mono transition-colors">
             ai open image
