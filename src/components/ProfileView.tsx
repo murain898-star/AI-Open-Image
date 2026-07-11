@@ -7,15 +7,21 @@ import { signOut } from 'firebase/auth';
 interface ProfileViewProps {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
+  activeUser?: { email: string | null; displayName?: string | null; photoURL?: string | null } | null;
 }
 
-export function ProfileView({ state, setState }: ProfileViewProps) {
-  const currentUser = auth?.currentUser;
+export function ProfileView({ state, setState, activeUser }: ProfileViewProps) {
+  const currentUser = activeUser || auth?.currentUser;
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(currentUser?.displayName || 'Fashion Creator');
   const [email, setEmail] = useState(currentUser?.email || 'user@example.com');
   const [loading, setLoading] = useState(false);
   const [createdAt, setCreatedAt] = useState('');
+
+  useEffect(() => {
+    setName(currentUser?.displayName || 'Fashion Creator');
+    setEmail(currentUser?.email || 'user@example.com');
+  }, [currentUser]);
 
   useEffect(() => {
     const date = new Date();
@@ -37,14 +43,17 @@ export function ProfileView({ state, setState }: ProfileViewProps) {
   };
 
   const handleSignOut = async () => {
+    try {
+      localStorage.removeItem('fashion_ai_local_user');
+    } catch (e) {}
     if (auth) {
       try {
         await signOut(auth);
       } catch (error) {
         console.error("Error signing out:", error);
       }
-      window.location.reload();
     }
+    window.location.reload();
   };
 
   return (

@@ -9,13 +9,46 @@ import {
 import { auth, googleProvider } from '../lib/firebase';
 import { LogIn, Sparkles, AlertCircle, Mail, Lock } from 'lucide-react';
 
-export function LoginView() {
+interface LoginViewProps {
+  onLocalLogin?: (email: string) => void;
+}
+
+export function LoginView({ onLocalLogin }: LoginViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSandboxFallback, setShowSandboxFallback] = useState(false);
+
+  useEffect(() => {
+    const checkSuspension = () => {
+      if ((window as any).__firebase_suspended) {
+        setError("Firebase Project API key is suspended or disabled. You can still test the complete application using Offline Sandbox Mode!");
+        setShowSandboxFallback(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (!checkSuspension()) {
+      const interval = setInterval(() => {
+        if (checkSuspension()) {
+          clearInterval(interval);
+        }
+      }, 250);
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+      }, 5000); // Poll for up to 5 seconds
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     // Check if we are returnins from a redirect login
@@ -39,6 +72,15 @@ export function LoginView() {
   }, []);
 
   const handleAuthError = (err: any) => {
+    const msg = String(err?.message || '').toLowerCase();
+    const code = String(err?.code || '').toLowerCase();
+    
+    if (msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied')) {
+      setError("Firebase Project API key is suspended or disabled. Please check your configuration in Google Cloud Platform / Firebase Console.");
+      setShowSandboxFallback(true);
+      return;
+    }
+
     if (err.code === 'auth/unauthorized-domain') {
       setError(`Domain (${window.location.hostname}) is not authorized. Add it in Firebase Console > Authentication > Settings > Authorized domains.`);
     } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
@@ -63,10 +105,6 @@ export function LoginView() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      setError("Firebase auth is not initialized.");
-      return;
-    }
     if (!email || !password) {
       setError("Please enter both email and password.");
       return;
@@ -74,6 +112,17 @@ export function LoginView() {
     
     setError(null);
     setIsSubmitting(true);
+
+    if (!auth) {
+      if (onLocalLogin) {
+        onLocalLogin(email);
+      } else {
+        setError("Firebase auth is not initialized.");
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
@@ -82,27 +131,49 @@ export function LoginView() {
       }
     } catch (err: any) {
       console.error("Email auth error:", err);
-      handleAuthError(err);
+      const msg = String(err?.message || '').toLowerCase();
+      const code = String(err?.code || '').toLowerCase();
+      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      
+      if (isSuspended && onLocalLogin) {
+        console.warn("Firebase suspended. Falling back to Local Sandbox Mode.");
+        onLocalLogin(email);
+      } else {
+        handleAuthError(err);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDemoLogin = async () => {
-    if (!auth) {
-      setError("Firebase auth is not initialized.");
-      return;
-    }
     setError(null);
     setIsSubmitting(true);
     
     const demoEmail = 'demo@ai-openimage.com';
     const demoPassword = 'razorpaydemo123';
     
+    if (!auth) {
+      if (onLocalLogin) {
+        onLocalLogin(demoEmail);
+      } else {
+        setError("Firebase auth is not initialized.");
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      const msg = String(err?.message || '').toLowerCase();
+      const code = String(err?.code || '').toLowerCase();
+      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      
+      if (isSuspended && onLocalLogin) {
+        console.warn("Firebase suspended. Falling back to Sandbox Mode.");
+        onLocalLogin(demoEmail);
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         try {
           await createUserWithEmailAndPassword(auth, demoEmail, demoPassword);
         } catch (createErr: any) {
@@ -127,8 +198,16 @@ export function LoginView() {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
+      const msg = String(err?.message || '').toLowerCase();
+      const code = String(err?.code || '').toLowerCase();
+      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-        console.error("Error signing in with Google Popup:", err);
+        if (isSuspended) {
+          console.warn("Suspended Firebase API Key during Google Popup Login.");
+        } else {
+          console.error("Error signing in with Google Popup:", err);
+        }
       }
       handleAuthError(err);
     }
@@ -143,7 +222,15 @@ export function LoginView() {
     try {
       await signInWithRedirect(auth, googleProvider);
     } catch (err: any) {
-      console.error("Error signing in with Google Redirect:", err);
+      const msg = String(err?.message || '').toLowerCase();
+      const code = String(err?.code || '').toLowerCase();
+      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      
+      if (isSuspended) {
+        console.warn("Suspended Firebase API Key during Google Redirect Login.");
+      } else {
+        console.error("Error signing in with Google Redirect:", err);
+      }
       handleAuthError(err);
     }
   };
@@ -182,6 +269,32 @@ export function LoginView() {
           {isLoading ? (
             <div className="flex justify-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+            </div>
+          ) : showSandboxFallback ? (
+            <div className="space-y-6">
+              <div className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-200 dark:border-amber-900/50 rounded-2xl text-left shadow-sm">
+                <h3 className="text-amber-800 dark:text-amber-400 font-semibold mb-2 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                  Try Offline Sandbox Mode (सैंडबॉक्स मोड)
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                  Firebase API key has been suspended on this workspace. However, you can still test all core features (such as AI image generation, custom options, and processing) completely offline using Sandbox Mode!
+                </p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-2 font-mono">
+                  (फायरबेस कुंजी निलंबित है, लेकिन आप अभी भी सभी एआई इमेज जनरेशन सुविधाओं का परीक्षण कर सकते हैं!)
+                </p>
+              </div>
+
+              {onLocalLogin && (
+                <button
+                  type="button"
+                  onClick={() => onLocalLogin(email || 'demo@ai-openimage.com')}
+                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all"
+                >
+                  <Sparkles className="w-5 h-5 animate-pulse text-yellow-300" />
+                  Launch Sandbox Mode (सैंडबॉक्स चलाएं)
+                </button>
+              )}
             </div>
           ) : (
             <>
@@ -257,17 +370,26 @@ export function LoginView() {
                 </button>
               </div>
 
-              <div className="mt-6 text-center">
+              <div className="mt-6 text-center space-y-2">
                 <button 
                   type="button" 
                   onClick={() => {
                     setIsSignUp(!isSignUp);
                     setError(null);
                   }}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+                  className="block w-full text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
                 >
                   {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                 </button>
+                {onLocalLogin && (
+                  <button
+                    type="button"
+                    onClick={() => onLocalLogin(email || 'demo@ai-openimage.com')}
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-normal transition-colors underline decoration-dotted"
+                  >
+                    Trouble signing in? Enter Offline Sandbox Mode
+                  </button>
+                )}
               </div>
             </>
           )}

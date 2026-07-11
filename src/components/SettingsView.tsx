@@ -90,7 +90,7 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">1. Usage Rights</h3>
                   <p>You retain all rights to the original images you upload. Images and videos generated using the Free plan are for personal use only. Commercial rights are granted only to Studio Pro and Agency plan subscribers.</p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">2. Credits and Billing</h3>
-                  <p>Credits are deducted upon successful generation. Video generation costs 1 credit per second of video length. Image generation costs 1 credit for 4K quality, and 2 credits for 8K (Gigapixel) quality. Subscriptions are billed monthly. Unused credits may roll over depending on your specific plan terms.</p>
+                  <p>Credits are deducted upon successful generation. Video generation costs 1 credit per second of video length. Image generation costs 2 credits for premium 4K quality (which automatically includes multi-step upscaling up to 8K for maximum sharpness!). Subscriptions are billed monthly. Unused credits may roll over depending on your specific plan terms.</p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-6">3. Content Guidelines</h3>
                   <p>You agree not to upload or generate inappropriate, offensive, or illegal content in both images and videos. We reserve the right to suspend accounts violating these guidelines.</p>
                 </div>
@@ -118,7 +118,7 @@ export function SettingsView({ theme, setTheme }: SettingsViewProps) {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">How do credits work?</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation costs 1 credit for 4K quality, and 2 credits for 8K (Gigapixel) quality. Generating a video costs 1 credit per second of video length.</p>
+                    <p className="text-gray-600 dark:text-gray-300 mt-1">Image generation costs 2 credits for premium 4K quality (which automatically upscales up to 8K for maximum details). Generating a video costs 1 credit per second of video length.</p>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Can I use the generated images and videos commercially?</h3>

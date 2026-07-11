@@ -207,8 +207,7 @@ export function Sidebar({ state, setState, onGenerate, isGenerating, onUpgradeTo
                   onChange={e => updateState('quality', e.target.value as ImageQuality)}
                   className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
                 >
-                  <option value="4K">4K</option>
-                  <option value="Gigapixel">8K</option>
+                  <option value="4K">4K Quality</option>
                 </select>
               </div>
 

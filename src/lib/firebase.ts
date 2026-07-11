@@ -85,9 +85,23 @@ async function testConnection() {
   if (!db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
+  } catch (error: any) {
+    const msg = String(error?.message || '').toLowerCase();
+    const code = String(error?.code || '').toLowerCase();
+    if (
+      msg.includes('suspended') || 
+      msg.includes('api-key') || 
+      code.includes('suspended') || 
+      code.includes('api-key') || 
+      code.includes('permission-denied') || 
+      msg.includes('permission-denied')
+    ) {
+      try {
+        (window as any).__firebase_suspended = true;
+      } catch (e) {}
+    }
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. ");
+      console.warn("Please check your Firebase configuration.");
     }
     // Skip logging for other errors, as this is simply a connection test.
   }

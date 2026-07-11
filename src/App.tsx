@@ -49,6 +49,27 @@ export default function App() {
     }
   };
   const [user, setUser] = useState<User | null>(null);
+  const [localUser, setLocalUser] = useState<{ uid: string; email: string; displayName?: string } | null>(() => {
+    try {
+      const stored = localStorage.getItem('fashion_ai_local_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (localUser) {
+        localStorage.setItem('fashion_ai_local_user', JSON.stringify(localUser));
+      } else {
+        localStorage.removeItem('fashion_ai_local_user');
+      }
+    } catch (e) {}
+  }, [localUser]);
+
+  const activeUser = localUser || user;
+
   const [authReady, setAuthReady] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
   const [userCredits, setUserCredits] = useState<number>(() => {
@@ -200,7 +221,7 @@ export default function App() {
     try {
       const cost = getGenerationCost(newState);
       
-      const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+      const effectiveCredits = activeUser?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
       if (cost > 0 && effectiveCredits < cost) {
         setError(`Insufficient credits. You need ${cost} credits but have ${effectiveCredits}. Please purchase more credits.`);
         setIsGenerating(false);
@@ -295,7 +316,7 @@ export default function App() {
     try {
       const cost = getGenerationCost(currentState);
 
-      const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+      const effectiveCredits = activeUser?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
       if (cost > 0 && effectiveCredits < cost) {
         setError(`Insufficient credits. You need ${cost} credits but have ${effectiveCredits}. Please purchase more credits.`);
         setIsGenerating(false);
@@ -359,11 +380,11 @@ export default function App() {
     );
   }
 
-  if (!user && auth) {
-    return <LoginView />;
+  if (!activeUser && auth) {
+    return <LoginView onLocalLogin={(email) => setLocalUser({ uid: 'local_demo_user', email, displayName: 'Fashion Creator (Sandbox)' })} />;
   }
 
-  const effectiveCredits = user?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
+  const effectiveCredits = activeUser?.email === 'mura.in898@gmail.com' ? 999999 : userCredits;
 
   return (
     <div className="flex h-[100dvh] fixed inset-0 w-full bg-gray-50 dark:bg-gray-900 overflow-hidden font-sans transition-colors">
@@ -373,7 +394,7 @@ export default function App() {
       
       {currentView === 'settings' && <SettingsView theme={theme} setTheme={setTheme} />}
       
-      {currentView === 'profile' && <ProfileView state={state} setState={setState} />}
+      {currentView === 'profile' && <ProfileView state={state} setState={setState} activeUser={activeUser} />}
 
       {currentView === 'pricing' && <PricingView onPurchaseSuccess={(credits) => setUserCredits(prev => prev + credits)} />}
 
@@ -407,7 +428,7 @@ export default function App() {
             onLoadPreset={handleLoadPreset}
             onDeletePreset={handleDeletePreset}
             userCredits={effectiveCredits}
-            freeGenerationsUsed={user?.email === 'mura.in898@gmail.com' ? 0 : freeGenerationsUsed}
+            freeGenerationsUsed={activeUser?.email === 'mura.in898@gmail.com' ? 0 : freeGenerationsUsed}
           />
           <div className="flex-1 flex flex-col relative min-h-0">
             {error && (
