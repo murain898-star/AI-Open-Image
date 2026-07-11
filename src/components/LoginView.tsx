@@ -230,15 +230,6 @@ export function LoginView() {
 
               <div className="space-y-3">
                 <button
-                  type="button"
-                  onClick={handleDemoLogin}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-6 py-3.5 rounded-xl font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Test Razorpay Demo Login
-                </button>
-                <button
                   onClick={handleLoginPopup}
                   className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3.5 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
