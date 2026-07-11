@@ -122,13 +122,13 @@ export interface Preset {
 }
 
 export function getGenerationCost(state: AppState): number {
-  const videoMultiplier = state.outputFormat === 'video' ? (state.videoDuration || 1) : 1;
-  const baseCost = state.outputFormat === 'video' 
-    ? 1 
-    : (state.quality === 'Gigapixel' ? 2 : 1);
-
   if (state.outputFormat === 'video') {
-    return baseCost * videoMultiplier;
+    const videoMultiplier = state.videoDuration || 1;
+    return 1 * videoMultiplier;
+  }
+
+  if (state.quality === 'Low Res (Free)') {
+    return 0;
   }
 
   if (state.creationType === 'Poster') {
@@ -139,7 +139,14 @@ export function getGenerationCost(state: AppState): number {
     return 2 * (state.cataloguePages || 12);
   }
 
-  // Default Image Generation:
+  // Default Image Generation cost based on quality selection:
+  let baseCost = 1;
+  if (state.quality === '4K' || state.quality === 'Ultra') {
+    baseCost = 2;
+  } else if (state.quality === 'Gigapixel' || state.quality === 'Print (5792x8688)') {
+    baseCost = 3;
+  }
+
   const modelCost = state.modelCount || 1;
   return baseCost * modelCost;
 }

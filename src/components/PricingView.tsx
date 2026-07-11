@@ -153,10 +153,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Basic",
       icon: Zap,
       price: 100,
-      credits: 12,
+      credits: 10,
       color: "blue",
       features: [
-        "12 Credits",
+        "10 Credits",
         "4K Image Generation",
         "Standard Generation Speed",
         "Basic Support"
@@ -166,10 +166,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Basic Plus",
       icon: Star,
       price: 200,
-      credits: 25,
+      credits: 20,
       color: "blue",
       features: [
-        "25 Credits",
+        "20 Credits",
         "4K Image Generation",
         "Standard Generation Speed",
         "Basic Support"
@@ -179,10 +179,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Basic Pro",
       icon: Zap,
       price: 500,
-      credits: 62,
+      credits: 50,
       color: "blue",
       features: [
-        "62 Credits",
+        "50 Credits",
         "4K Image Generation",
         "Standard Generation Speed",
         "Basic Support"
@@ -192,11 +192,11 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Premium",
       icon: Crown,
       price: 1000,
-      credits: 125,
+      credits: 100,
       color: "indigo",
       popular: true,
       features: [
-        "125 Credits",
+        "100 Credits",
         "4K & 8K Upscaling",
         "Priority Speed",
         "Premium Support"
@@ -206,10 +206,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Premium Plus",
       icon: Crown,
       price: 2000,
-      credits: 250,
+      credits: 200,
       color: "indigo",
       features: [
-        "250 Credits",
+        "200 Credits",
         "4K & 8K Upscaling",
         "Priority Speed",
         "Premium Support"
@@ -219,10 +219,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Premium Pro",
       icon: Crown,
       price: 3000,
-      credits: 375,
+      credits: 300,
       color: "indigo",
       features: [
-        "375 Credits",
+        "300 Credits",
         "4K & 8K Upscaling",
         "Priority Speed",
         "Premium Support"
@@ -232,10 +232,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Business",
       icon: Briefcase,
       price: 5000,
-      credits: 625,
+      credits: 500,
       color: "purple",
       features: [
-        "625 Credits",
+        "500 Credits",
         "API Access",
         "Highest Speed",
         "Dedicated Account Manager"
@@ -245,10 +245,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Business Plus",
       icon: Briefcase,
       price: 10000,
-      credits: 1250,
+      credits: 1000,
       color: "purple",
       features: [
-        "1250 Credits",
+        "1000 Credits",
         "API Access",
         "Highest Speed",
         "Dedicated Account Manager"
@@ -258,10 +258,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
       name: "Business Pro",
       icon: Briefcase,
       price: 15000,
-      credits: 1875,
+      credits: 1500,
       color: "purple",
       features: [
-        "1875 Credits",
+        "1500 Credits",
         "API Access",
         "Highest Speed",
         "Dedicated Account Manager"
@@ -270,10 +270,10 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
   ];
 
   const topUps = [
-    { credits: 12, price: 100 },
-    { credits: 25, price: 200 },
-    { credits: 62, price: 500 },
-    { credits: 125, price: 1000 }
+    { credits: 10, price: 100 },
+    { credits: 20, price: 200 },
+    { credits: 50, price: 500 },
+    { credits: 100, price: 1000 }
   ];
 
   return (
@@ -377,8 +377,9 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Image Generation</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex justify-between"><span>Low Res (Draft)</span> <span className="font-medium text-green-600 dark:text-green-400">Free (0 Credits)</span></li>
-                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">1 Credit</span></li>
-                <li className="flex justify-between"><span>Gigapixel (8K)</span> <span className="font-medium">2 Credits</span></li>
+                <li className="flex justify-between"><span>Standard / HD / 2K</span> <span className="font-medium">1 Credit</span></li>
+                <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">2 Credits</span></li>
+                <li className="flex justify-between"><span>Gigapixel (8K) / Print</span> <span className="font-medium">3 Credits</span></li>
               </ul>
             </div>
             <div>
@@ -396,7 +397,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
                   Total Cost = Poster: 13 Credits | Catalogue: Number of Pages × 2 Credits
                 </li>
                 <li className="text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                  1 Credit = ₹8
+                  1 Credit = ₹10
                 </li>
               </ul>
             </div>
