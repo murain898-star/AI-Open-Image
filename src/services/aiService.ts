@@ -542,12 +542,18 @@ Background environment: ${getBackgroundDescription(state)}`;
         finalAspectRatio = '9:16'; // Fallback to 9:16 for vertical fashion catalogs
       }
 
+      const isHighQuality = state.quality === '4K' || state.quality === 'Gigapixel' || isPrint;
+
       const imageConfig: any = {
         aspectRatio: finalAspectRatio,
-        imageSize: (state.quality === 'Gigapixel' || state.quality === '4K' || isPrint) ? '4K' : state.quality === '2K' ? '2K' : '1K'
+        imageSize: isHighQuality ? '1K' : state.quality === '2K' ? '2K' : '1K'
       };
 
-      if (onProgress) onProgress("Invoking Gemini Image Generation Engine...");
+      if (isHighQuality) {
+        if (onProgress) onProgress("STEP 1: Generating 1K Base Image (Imagen Fast)...");
+      } else {
+        if (onProgress) onProgress("Invoking Gemini Image Generation Engine...");
+      }
 
       // For nano banana series models, we call generateContent to generate images
       const response = await ai.models.generateContent({
@@ -574,15 +580,17 @@ Background environment: ${getBackgroundDescription(state)}`;
 
       let finalUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
 
-      if (state.quality === '4K') {
-        if (onProgress) onProgress("Applying Ultra High Definition 4K Neural Reconstruction...");
+      if (isHighQuality) {
+        // STEP 2: Immediately upscale to 4K
+        if (onProgress) onProgress("STEP 2: Immediately upscaling 1K image to 4K Ultra HD...");
         finalUrl = await upscaleImageBase64(finalUrl, 4096, true, 65, 15);
-      } else if (state.quality === 'Gigapixel') {
-        if (onProgress) onProgress("Applying 8K Gigapixel Detail Sharpening & Super-Resolution...");
+
+        // STEP 3: Immediately upscale to 8K / Gigapixel
+        if (onProgress) onProgress("STEP 3: Immediately upscaling 4K image to 8K Gigapixel...");
         finalUrl = await upscaleImageBase64(finalUrl, 8192, true, 80, 10);
-      } else if (state.quality === 'Print (5792x8688)') {
-        if (onProgress) onProgress("Applying High-Resolution Print Canvas Optimization...");
-        finalUrl = await upscaleImageBase64(finalUrl, 8688, true, 85, 10);
+      } else if (state.quality === '2K') {
+        if (onProgress) onProgress("Applying High Definition 2K Upscaling...");
+        finalUrl = await upscaleImageBase64(finalUrl, 2048, true, 50, 10);
       }
 
       return { url: finalUrl, type: 'image' };
