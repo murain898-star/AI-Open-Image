@@ -376,8 +376,6 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Image Generation</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>Low Res (Draft)</span> <span className="font-medium text-green-600 dark:text-green-400">Free (0 Credits)</span></li>
-                <li className="flex justify-between"><span>Standard / HD / 2K</span> <span className="font-medium">1 Credit</span></li>
                 <li className="flex justify-between"><span>4K / Ultra</span> <span className="font-medium">2 Credits</span></li>
                 <li className="flex justify-between"><span>Gigapixel (8K) / Print</span> <span className="font-medium">3 Credits</span></li>
               </ul>
@@ -385,7 +383,7 @@ export function PricingView({ onPurchaseSuccess }: PricingViewProps) {
             <div>
               <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2">Video Generation (Veo)</h4>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex justify-between"><span>Any Resolution</span> <span className="font-medium">1 Credit / sec</span></li>
+                <li className="flex justify-between"><span>Any Resolution</span> <span className="font-medium">2 Credits / sec</span></li>
               </ul>
             </div>
             <div>

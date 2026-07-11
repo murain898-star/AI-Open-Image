@@ -124,7 +124,7 @@ export interface Preset {
 export function getGenerationCost(state: AppState): number {
   if (state.outputFormat === 'video') {
     const videoMultiplier = state.videoDuration || 1;
-    return 1 * videoMultiplier;
+    return 2 * videoMultiplier;
   }
 
   if (state.quality === 'Low Res (Free)') {
