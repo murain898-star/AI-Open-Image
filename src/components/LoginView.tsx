@@ -75,7 +75,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
     const msg = String(err?.message || '').toLowerCase();
     const code = String(err?.code || '').toLowerCase();
     
-    if (msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied')) {
+    if (msg.includes('suspended') || code.includes('suspended')) {
       setError("Firebase Project API key is suspended or disabled. Please check your configuration in Google Cloud Platform / Firebase Console.");
       setShowSandboxFallback(true);
       return;
@@ -133,7 +133,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
       console.error("Email auth error:", err);
       const msg = String(err?.message || '').toLowerCase();
       const code = String(err?.code || '').toLowerCase();
-      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      const isSuspended = msg.includes('suspended') || code.includes('suspended');
       
       if (isSuspended && onLocalLogin) {
         console.warn("Firebase suspended. Falling back to Local Sandbox Mode.");
@@ -168,7 +168,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
     } catch (err: any) {
       const msg = String(err?.message || '').toLowerCase();
       const code = String(err?.code || '').toLowerCase();
-      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      const isSuspended = msg.includes('suspended') || code.includes('suspended');
       
       if (isSuspended && onLocalLogin) {
         console.warn("Firebase suspended. Falling back to Sandbox Mode.");
@@ -200,7 +200,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
     } catch (err: any) {
       const msg = String(err?.message || '').toLowerCase();
       const code = String(err?.code || '').toLowerCase();
-      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      const isSuspended = msg.includes('suspended') || code.includes('suspended');
       
       if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
         if (isSuspended) {
@@ -224,7 +224,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
     } catch (err: any) {
       const msg = String(err?.message || '').toLowerCase();
       const code = String(err?.code || '').toLowerCase();
-      const isSuspended = msg.includes('suspended') || msg.includes('api-key') || code.includes('suspended') || code.includes('api-key') || code.includes('permission-denied') || msg.includes('permission-denied');
+      const isSuspended = msg.includes('suspended') || code.includes('suspended');
       
       if (isSuspended) {
         console.warn("Suspended Firebase API Key during Google Redirect Login.");
@@ -259,7 +259,7 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
           <p className="text-gray-500 dark:text-gray-400 mb-2 transition-colors">ai open image is an artificial intelligence platform for image and video generation and processing.</p>
           <p className="text-gray-500 dark:text-gray-400 mb-8 transition-colors">Sign in to create your cinematic fashion masterpieces.</p>
           
-          {error && (
+          {error && !showSandboxFallback && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/50 rounded-xl flex items-start text-left gap-3 transition-colors">
               <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
               <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
@@ -272,16 +272,13 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
             </div>
           ) : showSandboxFallback ? (
             <div className="space-y-6">
-              <div className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-200 dark:border-amber-900/50 rounded-2xl text-left shadow-sm">
-                <h3 className="text-amber-800 dark:text-amber-400 font-semibold mb-2 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" />
-                  Try Offline Sandbox Mode (सैंडबॉक्स मोड)
+              <div className="p-5 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/10 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl text-left shadow-sm">
+                <h3 className="text-indigo-900 dark:text-indigo-300 font-bold mb-2.5 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  Local Sandbox Mode
                 </h3>
-                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
-                  Firebase API key has been suspended on this workspace. However, you can still test all core features (such as AI image generation, custom options, and processing) completely offline using Sandbox Mode!
-                </p>
-                <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-2 font-mono">
-                  (फायरबेस कुंजी निलंबित है, लेकिन आप अभी भी सभी एआई इमेज जनरेशन सुविधाओं का परीक्षण कर सकते हैं!)
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  The Firebase configuration might be unavailable. Click below to enter the fully operational offline Studio sandbox mode!
                 </p>
               </div>
 
@@ -289,10 +286,10 @@ export function LoginView({ onLocalLogin }: LoginViewProps) {
                 <button
                   type="button"
                   onClick={() => onLocalLogin(email || 'demo@ai-openimage.com')}
-                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all"
+                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <Sparkles className="w-5 h-5 animate-pulse text-yellow-300" />
-                  Launch Sandbox Mode (सैंडबॉक्स चलाएं)
+                  Enter Sandbox Mode (सैंडबॉक्स)
                 </button>
               )}
             </div>

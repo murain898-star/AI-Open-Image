@@ -90,11 +90,7 @@ async function testConnection() {
     const code = String(error?.code || '').toLowerCase();
     if (
       msg.includes('suspended') || 
-      msg.includes('api-key') || 
-      code.includes('suspended') || 
-      code.includes('api-key') || 
-      code.includes('permission-denied') || 
-      msg.includes('permission-denied')
+      code.includes('suspended')
     ) {
       try {
         (window as any).__firebase_suspended = true;
